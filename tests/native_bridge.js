@@ -2,7 +2,7 @@
 // and checks the page uses it for storage, export and opened files.
 const { chromium } = require('playwright');
 (async () => {
-  const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 820, height: 1180 } });
+  const b = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}); const page = await b.newPage({ viewport: { width: 820, height: 1180 } });
   const errors = []; page.on('pageerror', e => errors.push(String(e)));
   await page.addInitScript(() => {
     const files = JSON.parse(sessionStorage.getItem('mf') || '{}'), index = JSON.parse(sessionStorage.getItem('mi') || '{}'), log = [];

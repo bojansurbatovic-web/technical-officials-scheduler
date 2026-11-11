@@ -9,7 +9,7 @@ const sets = [
 ];
 const shots = [['1-assignments', 'assignments'], ['2-gantt', 'gantt'], ['3-meetings', 'meetings'], ['4-races', 'races'], ['5-schedules', 'schedules'], ['6-calendar', 'library']];
 (async () => {
-  const b = await chromium.launch();
+  const b = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
   for (const [name, viewport, scale, touch] of sets) {
     const ctx = await b.newContext({ viewport, deviceScaleFactor: scale, hasTouch: touch, isMobile: touch && viewport.width < 600, colorScheme: 'light', locale: 'en-GB' });
     const p = await ctx.newPage();
