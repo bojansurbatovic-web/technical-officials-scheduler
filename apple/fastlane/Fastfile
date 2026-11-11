@@ -70,11 +70,22 @@ def upload_listing(p)
   if v0
     notes_file = File.join(metadata_dir, "review_information", "notes.txt")
     notes = File.exist?(notes_file) ? File.read(notes_file).strip : ""
-    begin
-      v0.fetch_app_store_review_detail
-    rescue => e
-      v0.create_app_store_review_detail(attributes: { notes: notes, demo_account_required: false })
+    detail = (v0.fetch_app_store_review_detail rescue nil)
+    if detail
+      if detail.notes.to_s.strip != notes
+        detail.update(attributes: { notes: notes })
+        UI.success("App Review notes updated for #{p} version #{v0.version_string}")
+      end
+    else
+      detail = v0.create_app_store_review_detail(attributes: { notes: notes, demo_account_required: false })
       UI.success("Created App Review Information with the review notes for #{p} version #{v0.version_string}")
+    end
+    # optional screen recording for App Review: REVIEW_ATTACHMENT=path/to/video.mp4
+    att = ENV["REVIEW_ATTACHMENT"].to_s
+    if !att.empty? && File.exist?(att)
+      (detail.app_store_review_attachments || []).each { |old| old.delete! rescue nil }
+      Spaceship::ConnectAPI::AppStoreReviewAttachment.create(app_store_review_detail_id: detail.id, path: att)
+      UI.success("Attached #{File.basename(att)} to App Review Information (#{p})")
     end
   end
   upload_to_app_store(

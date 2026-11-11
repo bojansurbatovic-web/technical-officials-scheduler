@@ -1,1 +1,22 @@
-No sign-in is needed. The app opens with an example event (two Elite races, 18 placeholder officials named TO 01–TO 18). Plan → Assignments shows the generated plan; Setup lets you change races and officials; More → Export & share creates Excel, calendar and picture files. The app works fully offline and makes no network requests.
+1. SCREEN RECORDING
+Attached to this App Review Information: a recording made on a physical iPhone running the latest iOS. It starts with launching the app and shows the typical flow: example event → new event → races → officials → automatic plan → conflicts → Gantt and personal schedules → export to Excel via the share sheet. The app has no account registration, login or account deletion, no user-generated content shared with others, and no paid content or In-App Purchases.
+
+2. PURPOSE AND AUDIENCE
+Technical Officials Scheduler plans the Technical Officials (referees) of triathlon races. Its users are race organisers, technical delegates and chief officials of triathlon clubs, national federations and event organisers anywhere in the world – any organiser that runs races under the World Triathlon Competition Rules, which national federations also use. Planning who works where is normally done by hand in spreadsheets: each official needs a main position, short jobs must not overlap in time, and the rules require briefings and meetings at fixed times. The app does this automatically: from the races (format, date, start time) and the list of officials it gives every official a position, adds short jobs without time clashes, books the required meetings (athletes' briefing, Jury meetings, rehearsals), counts radios, and warns about conflicts. The result can be viewed as a list, personal schedules, a Gantt chart and a timeline, and exported to Excel, calendar files or pictures.
+
+3. HOW TO USE IT (no login, no sample files needed)
+- On first launch an example event opens (two Elite races, 18 placeholder officials "TO 01"–"TO 18").
+- Plan tab → Assignments: the generated plan. Choose another official in any row; the plan updates and the row is locked.
+- Setup tab → Races: change a start time or add a race; Officials: rename an official or change the number of officials; Meetings & briefings: the rule-based meetings.
+- Views tab → Gantt / Personal schedules / Timeline.
+- More tab → Export & share: Excel, LibreOffice, calendar (.ics), Gantt picture or plan file through the standard share sheet.
+- Events tab → New event: creates your own event; events are saved automatically on the device.
+
+4. EXTERNAL SERVICES
+None. The app makes no network requests and uses no data providers, authentication, payment, analytics, advertising or AI services. All planning runs on the device. The only outside interaction is the iOS share sheet when the user exports a file.
+
+5. REGIONAL DIFFERENCES
+None. The app works the same in every region and the content is identical everywhere (English).
+
+6. REGULATED INDUSTRY / THIRD-PARTY MATERIAL
+Not a regulated industry. The app contains no third-party protected material: no World Triathlon logos, trademarks, images or copied documents. It implements publicly available competition rules and cites rule numbers (e.g. "CR 2.7") as factual references, and states in the app and on the App Store page that it is an independent tool, not affiliated with or endorsed by World Triathlon. Privacy policy: https://trisport.me/privacy.html
