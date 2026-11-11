@@ -1,0 +1,46 @@
+# XcodeGen spec – run `xcodegen generate` in this folder to create TOScheduler.xcodeproj
+name: TOScheduler
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "16.0"
+    macOS: "13.0"
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+targets:
+  TOScheduler-iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+      - path: ../web
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_NAME: TOScheduler
+        INFOPLIST_FILE: Config/Info-iOS.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+    scheme: {}
+  TOScheduler-macOS:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: Resources
+      - path: ../web
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_NAME: Technical Officials Scheduler
+        INFOPLIST_FILE: Config/Info-macOS.plist
+        CODE_SIGN_ENTITLEMENTS: Config/macOS.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        COMBINE_HIDPI_IMAGES: YES
+    scheme: {}

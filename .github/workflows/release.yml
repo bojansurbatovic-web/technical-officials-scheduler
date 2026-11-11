@@ -1,0 +1,91 @@
+name: Upload to TestFlight
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which app to upload
+        type: choice
+        options: [iphone-ipad, mac, both]
+        default: iphone-ipad
+      version:
+        description: Version shown on the App Store (e.g. 1.0.0)
+        default: "1.0.0"
+  push:
+    tags: ["v*"]
+
+env:
+  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+  ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+  ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+  ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+  DIST_CERT_P12_BASE64: ${{ secrets.DIST_CERT_P12_BASE64 }}
+  DIST_CERT_PASSWORD: ${{ secrets.DIST_CERT_PASSWORD }}
+  BUNDLE_ID: ${{ vars.BUNDLE_ID }}
+  APP_VERSION: ${{ inputs.version || github.ref_name }}
+  BUILD_NUMBER: ${{ github.run_number }}
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+  FASTLANE_HIDE_CHANGELOG: "1"
+
+jobs:
+  iphone-ipad:
+    if: github.event_name == 'push' || inputs.platform != 'mac'
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the Apple secrets are set
+        run: |
+          for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is missing – see PUBLISHING.md, step 4"; exit 1; fi
+          done
+          echo "APP_VERSION=${APP_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Tools
+        run: |
+          brew install xcodegen
+          command -v fastlane || brew install fastlane
+      - name: Generate the Xcode project
+        run: cd apple && xcodegen generate
+      - name: Certificate
+        run: |
+          echo "$DIST_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          echo "DIST_CERT_PATH=$RUNNER_TEMP/dist.p12" >> "$GITHUB_ENV"
+      - name: Build, sign and upload
+        run: cd apple && fastlane ios beta
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-build-logs
+          path: ~/Library/Logs/gym/
+
+  mac:
+    if: github.event_name == 'workflow_dispatch' && inputs.platform != 'iphone-ipad'
+    runs-on: macos-26
+    env:
+      MAC_INSTALLER_P12_BASE64: ${{ secrets.MAC_INSTALLER_P12_BASE64 }}
+      MAC_INSTALLER_PASSWORD: ${{ secrets.MAC_INSTALLER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check that the Apple secrets are set
+        run: |
+          for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD MAC_INSTALLER_P12_BASE64 MAC_INSTALLER_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is missing – see PUBLISHING.md, step 4 (Mac)"; exit 1; fi
+          done
+          echo "APP_VERSION=${APP_VERSION#v}" >> "$GITHUB_ENV"
+      - name: Tools
+        run: |
+          brew install xcodegen
+          command -v fastlane || brew install fastlane
+      - name: Generate the Xcode project
+        run: cd apple && xcodegen generate
+      - name: Certificates
+        run: |
+          echo "$DIST_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          echo "$MAC_INSTALLER_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/installer.p12"
+          echo "DIST_CERT_PATH=$RUNNER_TEMP/dist.p12" >> "$GITHUB_ENV"
+          echo "MAC_INSTALLER_CERT_PATH=$RUNNER_TEMP/installer.p12" >> "$GITHUB_ENV"
+      - name: Build, sign and upload
+        run: cd apple && fastlane mac beta
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mac-build-logs
+          path: ~/Library/Logs/gym/

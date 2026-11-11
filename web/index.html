@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#14467A">
+<meta name="description" content="Plan Technical Official positions, meetings and briefings for triathlon events run under the World Triathlon Competition Rules.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' tos-app:; img-src 'self' tos-app: data: blob:; style-src 'self' tos-app: 'unsafe-inline'; script-src 'self' tos-app:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TO Scheduler">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Technical Officials Scheduler</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button id="btn-home" class="home" type="button" aria-label="Calendar and events"><img src="icons/icon-192.png" alt="" width="34" height="34"></button>
+    <div class="titles">
+      <div id="doc-title" class="doc-title">Technical Officials Scheduler</div>
+      <div id="doc-sub" class="doc-sub"></div>
+    </div>
+    <div class="top-actions">
+      <button id="btn-undo" class="btn icon" type="button" title="Undo" aria-label="Undo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62A7.95 7.95 0 0 1 12.5 10.5c3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+      <button id="btn-redo" class="btn icon" type="button" title="Redo" aria-label="Redo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22l2.36.78A8 8 0 0 1 11.5 10.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
+      <label class="auto" title="Re-plan automatically after every change (locked rows are kept)"><input id="auto-toggle" type="checkbox" class="switch" checked><span>Auto</span></label>
+    </div>
+    <button id="status-pill" class="pill" type="button" hidden></button>
+  </header>
+  <nav id="sidebar" class="sidebar" aria-label="Sections"></nav>
+  <main id="main" class="main" tabindex="-1"></main>
+  <nav id="tabbar" class="tabbar" aria-label="Sections"></nav>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<noscript>This app needs JavaScript.</noscript>
+<script src="js/reference.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/exporters.js"></script>
+<script src="js/examples.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script src="js/boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-wtplan+json">
+    <comment>Technical Officials Scheduler event</comment>
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.wtplan.json" weight="60"/>
+    <icon name="wt-planner"/>
+  </mime-type>
+</mime-info>

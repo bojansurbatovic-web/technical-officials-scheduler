@@ -1,0 +1,754 @@
+{
+  "app": "wt-planner",
+  "version": 1,
+  "event": {
+    "name": "Q3 – Elite back-to-back (example)",
+    "venue": "Example venue",
+    "date": "2026-11-21",
+    "notes": "Example from Question 3: two Elite standard-distance races, back to back. Swim 2 laps, bike 8 laps, run 2 laps, 2 wheel stations, 2 aid stations. Times follow the Masterfile back-to-back schedule (10:00 / 12:45). Officials are placeholders – replace them with your team.",
+    "td": "Technical Delegate",
+    "md": "Medical Delegate",
+    "jury": [
+      "",
+      ""
+    ],
+    "vcc_base": 1,
+    "spare_pct": 10
+  },
+  "settings": {
+    "buffer": 5,
+    "start_crew_pre": 10,
+    "swim_pre": 20,
+    "swim_post": 15,
+    "water_temp_start": 62,
+    "water_temp_end": 50,
+    "line_pre": 5,
+    "trans_cleanup": 10,
+    "trans_post": 30,
+    "bike_pre": 20,
+    "bike_post": 10,
+    "lap_pre": 10,
+    "lap_post": 5,
+    "run_pre": 20,
+    "run_post": 5,
+    "aid_pre": 30,
+    "aid_post": 10,
+    "pb_pre": 15,
+    "pb_post": 10,
+    "finish_chief_pre": 25,
+    "finish_asst_pre": 10,
+    "finish_post": 10,
+    "hr_signoff": 15,
+    "wheel_pre": 15,
+    "wheel_post": 15,
+    "reg_setup": 30,
+    "reg_post": 20,
+    "tech_pre": 30,
+    "tech_post": 20,
+    "cro_pre": 45,
+    "cro_post": 30,
+    "video_pre": 30,
+    "relay_pre": 15,
+    "chaperone_post": 15
+  },
+  "races": [
+    {
+      "id": "r8eb9e5",
+      "name": "Elite Women",
+      "category": "elite_women",
+      "format": "standard",
+      "start": "10:00",
+      "legs": 1,
+      "swim_m": 1500,
+      "bike_km": 40.0,
+      "run_km": 10.0,
+      "laps": {
+        "swim": 2,
+        "bike": 8,
+        "run": 2
+      },
+      "wheel_stations": 2,
+      "aid_stations": 2,
+      "start_line": 4,
+      "draft_legal": true,
+      "paces": {
+        "swim_pace": 1.3,
+        "bike_speed": 40.0,
+        "run_pace": 3.4,
+        "t1": 0.75,
+        "t2": 0.5,
+        "gap_swim": 22,
+        "gap_t2": 8,
+        "gap_finish": 9
+      },
+      "schedule": {
+        "lounge_open": 75,
+        "lounge_close": 30,
+        "tz_open": 60,
+        "tz_close": 15,
+        "intro": 10,
+        "medal_after_winner": 20
+      },
+      "shifts": {},
+      "date": ""
+    },
+    {
+      "id": "rfb4d2d",
+      "name": "Elite Men",
+      "category": "elite_men",
+      "format": "standard",
+      "start": "12:45",
+      "legs": 1,
+      "swim_m": 1500,
+      "bike_km": 40.0,
+      "run_km": 10.0,
+      "laps": {
+        "swim": 2,
+        "bike": 8,
+        "run": 2
+      },
+      "wheel_stations": 2,
+      "aid_stations": 2,
+      "start_line": 4,
+      "draft_legal": true,
+      "paces": {
+        "swim_pace": 1.183,
+        "bike_speed": 43.6,
+        "run_pace": 3.05,
+        "t1": 0.75,
+        "t2": 0.5,
+        "gap_swim": 22,
+        "gap_t2": 8,
+        "gap_finish": 9
+      },
+      "schedule": {
+        "lounge_open": 75,
+        "lounge_close": 30,
+        "tz_open": 60,
+        "tz_close": 15,
+        "intro": 10,
+        "medal_after_winner": 20
+      },
+      "shifts": {},
+      "date": ""
+    }
+  ],
+  "officials": [
+    {
+      "name": "TO 01",
+      "country": "",
+      "primary": "head_referee",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 02",
+      "country": "",
+      "primary": "cro",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 03",
+      "country": "",
+      "primary": "chief_registration",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 04",
+      "country": "",
+      "primary": "chief_wheel_station",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 05",
+      "country": "",
+      "primary": "chief_swim",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 06",
+      "country": "",
+      "primary": "asst_swim",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 07",
+      "country": "",
+      "primary": "chief_penalty_box",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 08",
+      "country": "",
+      "primary": "chief_lap_auditor",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 09",
+      "country": "",
+      "primary": "chief_transition",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 10",
+      "country": "",
+      "primary": "asst_wheel_station",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 11",
+      "country": "",
+      "primary": "line_official",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 12",
+      "country": "",
+      "primary": "chief_bike",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 13",
+      "country": "",
+      "primary": "chief_vehicular",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 14",
+      "country": "",
+      "primary": "chief_run",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 15",
+      "country": "",
+      "primary": "asst_run",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 16",
+      "country": "",
+      "primary": "chief_aid_station",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 17",
+      "country": "",
+      "primary": "chief_finish",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    },
+    {
+      "name": "TO 18",
+      "country": "",
+      "primary": "chief_technology",
+      "max_secondary": 3,
+      "available_from": "",
+      "available_to": "",
+      "radio": true,
+      "notes": "",
+      "races": {}
+    }
+  ],
+  "positions": {
+    "head_referee": {
+      "enabled": true,
+      "count": null
+    },
+    "cro": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_technology": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_registration": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_swim": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_transition": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_bike": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_run": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_finish": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_penalty_box": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_wheel_station": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_lap_auditor": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_aid_station": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_vehicular": {
+      "enabled": true,
+      "count": null
+    },
+    "chief_relay_zone": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_swim": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_wheel_station": {
+      "enabled": true,
+      "count": null
+    },
+    "line_official": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_run": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_registration": {
+      "enabled": false,
+      "count": null
+    },
+    "asst_transition": {
+      "enabled": false,
+      "count": null
+    },
+    "chief_vcc": {
+      "enabled": false,
+      "count": null
+    },
+    "video_review": {
+      "enabled": false,
+      "count": null
+    },
+    "starter": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_starter": {
+      "enabled": true,
+      "count": null
+    },
+    "start_line": {
+      "enabled": true,
+      "count": null
+    },
+    "false_start": {
+      "enabled": true,
+      "count": null
+    },
+    "line_official_2": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_transition_t1": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_transition_t2": {
+      "enabled": true,
+      "count": null
+    },
+    "moto_to": {
+      "enabled": false,
+      "count": null
+    },
+    "bike_penalty_box": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_aid_station": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_finish": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_penalty_box": {
+      "enabled": true,
+      "count": null
+    },
+    "asst_lap_auditor": {
+      "enabled": false,
+      "count": null
+    },
+    "asst_relay_zone": {
+      "enabled": true,
+      "count": null
+    },
+    "chaperone": {
+      "enabled": false,
+      "count": null
+    },
+    "protocol": {
+      "enabled": false,
+      "count": null
+    }
+  },
+  "assignments": {
+    "chief_penalty_box#1|rfb4d2d": {
+      "official": "TO 07",
+      "locked": false
+    },
+    "chief_lap_auditor#1|rfb4d2d": {
+      "official": "TO 08",
+      "locked": false
+    },
+    "asst_aid_station#1|rfb4d2d": {
+      "official": "TO 06",
+      "locked": false
+    },
+    "start_line#1|r8eb9e5": {
+      "official": "TO 08",
+      "locked": false
+    },
+    "cro#1|r8eb9e5": {
+      "official": "TO 02",
+      "locked": false
+    },
+    "chief_bike#1|rfb4d2d": {
+      "official": "TO 12",
+      "locked": false
+    },
+    "chief_run#1|rfb4d2d": {
+      "official": "TO 14",
+      "locked": false
+    },
+    "line_official_2#1|rfb4d2d": {
+      "official": "TO 02",
+      "locked": false
+    },
+    "chief_finish#1|rfb4d2d": {
+      "official": "TO 17",
+      "locked": false
+    },
+    "chief_vehicular#1|rfb4d2d": {
+      "official": "TO 13",
+      "locked": false
+    },
+    "asst_transition_t2#1|rfb4d2d": {
+      "official": "TO 05",
+      "locked": false
+    },
+    "false_start#1|r8eb9e5": {
+      "official": "TO 07",
+      "locked": false
+    },
+    "asst_penalty_box#1|r8eb9e5": {
+      "official": "TO 11",
+      "locked": false
+    },
+    "start_line#3|r8eb9e5": {
+      "official": "TO 14",
+      "locked": false
+    },
+    "asst_finish#1|r8eb9e5": {
+      "official": "TO 12",
+      "locked": false
+    },
+    "chief_wheel_station#1|day:2026-11-21": {
+      "official": "TO 04",
+      "locked": false
+    },
+    "starter#1|r8eb9e5": {
+      "official": "TO 01",
+      "locked": false
+    },
+    "start_line#2|r8eb9e5": {
+      "official": "TO 11",
+      "locked": false
+    },
+    "asst_transition_t2#1|r8eb9e5": {
+      "official": "TO 05",
+      "locked": false
+    },
+    "chief_swim#1|r8eb9e5": {
+      "official": "TO 05",
+      "locked": false
+    },
+    "asst_transition_t1#1|r8eb9e5": {
+      "official": "TO 17",
+      "locked": false
+    },
+    "false_start#1|rfb4d2d": {
+      "official": "TO 16",
+      "locked": false
+    },
+    "chief_registration#1|day:2026-11-21": {
+      "official": "TO 03",
+      "locked": false
+    },
+    "head_referee#1|rfb4d2d": {
+      "official": "TO 01",
+      "locked": false
+    },
+    "chief_penalty_box#1|r8eb9e5": {
+      "official": "TO 07",
+      "locked": false
+    },
+    "asst_transition_t1#1|rfb4d2d": {
+      "official": "TO 17",
+      "locked": false
+    },
+    "asst_finish#2|r8eb9e5": {
+      "official": "TO 13",
+      "locked": false
+    },
+    "chief_swim#1|rfb4d2d": {
+      "official": "TO 05",
+      "locked": false
+    },
+    "cro#1|rfb4d2d": {
+      "official": "TO 02",
+      "locked": false
+    },
+    "chief_aid_station#1|rfb4d2d": {
+      "official": "TO 16",
+      "locked": false
+    },
+    "chief_aid_station#1|r8eb9e5": {
+      "official": "TO 16",
+      "locked": false
+    },
+    "start_line#2|rfb4d2d": {
+      "official": "TO 11",
+      "locked": false
+    },
+    "asst_penalty_box#1|rfb4d2d": {
+      "official": "TO 11",
+      "locked": false
+    },
+    "line_official#1|rfb4d2d": {
+      "official": "TO 11",
+      "locked": false
+    },
+    "head_referee#1|r8eb9e5": {
+      "official": "TO 01",
+      "locked": false
+    },
+    "asst_run#1|r8eb9e5": {
+      "official": "TO 15",
+      "locked": false
+    },
+    "start_line#4|r8eb9e5": {
+      "official": "TO 15",
+      "locked": false
+    },
+    "chief_technology#1|day:2026-11-21": {
+      "official": "TO 18",
+      "locked": false
+    },
+    "asst_swim#1|r8eb9e5": {
+      "official": "TO 06",
+      "locked": false
+    },
+    "start_line#3|rfb4d2d": {
+      "official": "TO 14",
+      "locked": false
+    },
+    "asst_starter#1|rfb4d2d": {
+      "official": "TO 07",
+      "locked": false
+    },
+    "asst_wheel_station#1|day:2026-11-21": {
+      "official": "TO 10",
+      "locked": false
+    },
+    "line_official#1|r8eb9e5": {
+      "official": "TO 11",
+      "locked": false
+    },
+    "chief_lap_auditor#1|r8eb9e5": {
+      "official": "TO 08",
+      "locked": false
+    },
+    "line_official_2#1|r8eb9e5": {
+      "official": "TO 02",
+      "locked": false
+    },
+    "start_line#1|rfb4d2d": {
+      "official": "TO 08",
+      "locked": false
+    },
+    "asst_aid_station#1|r8eb9e5": {
+      "official": "TO 06",
+      "locked": false
+    },
+    "chief_transition#1|day:2026-11-21": {
+      "official": "TO 09",
+      "locked": false
+    },
+    "asst_swim#1|rfb4d2d": {
+      "official": "TO 06",
+      "locked": false
+    },
+    "asst_finish#1|rfb4d2d": {
+      "official": "TO 12",
+      "locked": false
+    },
+    "asst_finish#2|rfb4d2d": {
+      "official": "TO 13",
+      "locked": false
+    },
+    "chief_run#1|r8eb9e5": {
+      "official": "TO 14",
+      "locked": false
+    },
+    "chief_finish#1|r8eb9e5": {
+      "official": "TO 17",
+      "locked": false
+    },
+    "chief_vehicular#1|r8eb9e5": {
+      "official": "TO 13",
+      "locked": false
+    },
+    "asst_starter#1|r8eb9e5": {
+      "official": "TO 02",
+      "locked": false
+    },
+    "starter#1|rfb4d2d": {
+      "official": "TO 02",
+      "locked": false
+    },
+    "asst_run#1|rfb4d2d": {
+      "official": "TO 15",
+      "locked": false
+    },
+    "chief_bike#1|r8eb9e5": {
+      "official": "TO 12",
+      "locked": false
+    },
+    "start_line#4|rfb4d2d": {
+      "official": "TO 15",
+      "locked": false
+    }
+  },
+  "sessions": {},
+  "custom_sessions": [],
+  "_primary": {
+    "TO 01": "head_referee#1",
+    "TO 02": "cro#1",
+    "TO 03": "chief_registration#1",
+    "TO 04": "chief_wheel_station#1",
+    "TO 05": "chief_swim#1",
+    "TO 06": "asst_swim#1",
+    "TO 07": "chief_penalty_box#1",
+    "TO 08": "chief_lap_auditor#1",
+    "TO 09": "chief_transition#1",
+    "TO 10": "asst_wheel_station#1",
+    "TO 11": "line_official#1",
+    "TO 12": "chief_bike#1",
+    "TO 13": "chief_vehicular#1",
+    "TO 14": "chief_run#1",
+    "TO 15": "asst_run#1",
+    "TO 16": "chief_aid_station#1",
+    "TO 17": "chief_finish#1",
+    "TO 18": "chief_technology#1"
+  }
+}

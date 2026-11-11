@@ -1,0 +1,70 @@
+# Builds and uploads Technical Officials Scheduler to TestFlight (App Store Connect).
+# Runs on GitHub Actions (.github/workflows/release.yml). Everything secret comes from environment variables
+# set from GitHub secrets – nothing is stored in the repository. See PUBLISHING.md.
+default_platform(:ios)
+
+BUNDLE_ID = ENV["BUNDLE_ID"].to_s.empty? ? "com.bojansurbatovic.toscheduler" : ENV["BUNDLE_ID"]
+TEAM_ID = ENV.fetch("APPLE_TEAM_ID")
+VERSION = ENV["APP_VERSION"].to_s.empty? ? "1.0.0" : ENV["APP_VERSION"]
+BUILD = ENV["BUILD_NUMBER"].to_s.empty? ? Time.now.strftime("%y%m%d%H%M") : ENV["BUILD_NUMBER"]
+KEYCHAIN = "fastlane_tmp_keychain"
+
+def asc_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_KEY_P8_BASE64"),
+    is_key_content_base64: true
+  )
+end
+
+def prepare_keychain(certs)
+  setup_ci(force: true)
+  # Apple's intermediate certificate, needed to build the signing chain
+  sh("curl -fsSL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o \"$RUNNER_TEMP/wwdr.cer\" && " \
+     "security import \"$RUNNER_TEMP/wwdr.cer\" -k ~/Library/Keychains/#{KEYCHAIN}-db -A || true")
+  certs.each do |path, password|
+    import_certificate(certificate_path: path, certificate_password: password, keychain_name: KEYCHAIN, keychain_password: "")
+  end
+end
+
+def signing_args(profile_name)
+  "DEVELOPMENT_TEAM=#{TEAM_ID} PRODUCT_BUNDLE_IDENTIFIER=#{BUNDLE_ID} MARKETING_VERSION=#{VERSION} " \
+  "CURRENT_PROJECT_VERSION=#{BUILD} CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='Apple Distribution' " \
+  "PROVISIONING_PROFILE_SPECIFIER='#{profile_name}'"
+end
+
+platform :ios do
+  desc "Build the iPhone / iPad app and upload it to TestFlight"
+  lane :beta do
+    key = asc_key
+    prepare_keychain([[ENV.fetch("DIST_CERT_PATH"), ENV.fetch("DIST_CERT_PASSWORD")]])
+    get_provisioning_profile(api_key: key, app_identifier: BUNDLE_ID, team_id: TEAM_ID, platform: "ios")
+    profile = lane_context[SharedValues::SIGH_NAME]
+    build_app(
+      project: "TOScheduler.xcodeproj", scheme: "TOScheduler-iOS", configuration: "Release",
+      export_method: "app-store", xcargs: signing_args(profile),
+      export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
+      output_directory: "build", output_name: "TOScheduler.ipa"
+    )
+    upload_to_testflight(api_key: key, ipa: "build/TOScheduler.ipa", skip_waiting_for_build_processing: true)
+  end
+end
+
+platform :mac do
+  desc "Build the Mac app and upload it to TestFlight (needs the Mac Installer Distribution certificate too)"
+  lane :beta do
+    key = asc_key
+    prepare_keychain([[ENV.fetch("DIST_CERT_PATH"), ENV.fetch("DIST_CERT_PASSWORD")],
+                      [ENV.fetch("MAC_INSTALLER_CERT_PATH"), ENV.fetch("MAC_INSTALLER_PASSWORD")]])
+    get_provisioning_profile(api_key: key, app_identifier: BUNDLE_ID, team_id: TEAM_ID, platform: "macos")
+    profile = lane_context[SharedValues::SIGH_NAME]
+    build_app(
+      project: "TOScheduler.xcodeproj", scheme: "TOScheduler-macOS", configuration: "Release",
+      export_method: "app-store", xcargs: signing_args(profile),
+      export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
+      output_directory: "build", output_name: "TOScheduler.pkg"
+    )
+    upload_to_testflight(api_key: key, pkg: "build/TOScheduler.pkg", app_platform: "osx", skip_waiting_for_build_processing: true)
+  end
+end

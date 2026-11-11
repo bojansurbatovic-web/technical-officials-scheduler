@@ -1,0 +1,57 @@
+name: Tests and build check
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  web:
+    name: Planner engine, exports and screens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Engine and exporters match the Ubuntu app (golden files)
+        run: npm test
+      - name: Screens at phone, tablet and desktop size
+        run: |
+          npx playwright install --with-deps chromium
+          (python3 -m http.server 8765 --directory web &) ; sleep 1
+          SHOTS=shots npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: shots/
+
+  apple:
+    name: Compile iPhone/iPad and Mac apps (unsigned)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode
+        run: xcodebuild -version
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          cd apple && xcodegen generate
+      - name: Build for iPhone and iPad (simulator)
+        run: |
+          cd apple
+          set -o pipefail
+          xcodebuild -project TOScheduler.xcodeproj -scheme TOScheduler-iOS -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO 2>&1 | tee ../build-ios.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" 
+      - name: Build for Mac
+        run: |
+          cd apple
+          set -o pipefail
+          xcodebuild -project TOScheduler.xcodeproj -scheme TOScheduler-macOS -configuration Debug \
+            -destination 'generic/platform=macOS' build CODE_SIGNING_ALLOWED=NO 2>&1 | tee ../build-mac.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xcode-build-logs
+          path: build-*.log

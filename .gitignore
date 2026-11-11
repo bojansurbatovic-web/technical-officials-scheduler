@@ -1,0 +1,21 @@
+node_modules/
+shots/
+build/
+*.xcodeproj/
+apple/build/
+apple/fastlane/report.xml
+apple/fastlane/README.md
+apple/Config/Local.xcconfig
+linux/dist/
+linux/build/
+__pycache__/
+*.pyc
+# signing material never goes into the repository
+*.p12
+*.p8
+*.key
+*.csr
+*.cer
+*.mobileprovision
+*.base64.txt
+.DS_Store

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Technical Officials Scheduler
+GenericName=TO Scheduler
+Comment=Plan World Triathlon Technical Official assignments, Gantt chart and race timeline
+Exec=wt-planner %f
+Icon=wt-planner
+Terminal=false
+Categories=Office;ProjectManagement;Sports;
+MimeType=application/x-wtplan+json;
+Keywords=triathlon;officials;schedule;gantt;roster;
+StartupNotify=true

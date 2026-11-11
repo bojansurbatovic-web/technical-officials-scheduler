@@ -1,0 +1,10 @@
+#!/bin/sh
+# Launcher: uses the system Python, which has the GTK bindings on Ubuntu.
+HERE="$(dirname "$(readlink -f "$0")")"
+for d in "$HERE/../lib/wt-planner" "$HERE/../share/wt-planner" "$HERE/.." "$HOME/.local/lib/wt-planner"; do
+  if [ -d "$d/wt_planner" ]; then
+    exec /usr/bin/python3 -c "import sys; sys.path.insert(0, '$d'); from wt_planner.gui import main; sys.exit(main())" "$@"
+  fi
+done
+echo "wt-planner: program files not found" >&2
+exit 1
