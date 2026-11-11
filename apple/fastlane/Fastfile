@@ -89,6 +89,17 @@ def upload_listing(p)
   version = app.get_edit_app_store_version(platform: store_platform(p))
   return unless version
   if mac
+    # deliver does not save the Mac version's text reliably – set it directly from fastlane/metadata
+    loc0 = version.get_app_store_version_localizations.find { |l| l.locale == app.primary_locale }
+    md = ->(name) { f = File.join(metadata_dir, app.primary_locale, "#{name}.txt"); File.exist?(f) ? File.read(f).strip : nil }
+    if loc0
+      loc0.update(attributes: { description: md.call("description"), keywords: md.call("keywords"),
+                                promotional_text: md.call("promotional_text"), support_url: md.call("support_url"),
+                                marketing_url: md.call("marketing_url") }.compact)
+      UI.success("Mac text set for #{app.primary_locale}")
+    end
+    copyright_file = File.join(metadata_dir, "copyright.txt")
+    version.update(attributes: { copyright: File.read(copyright_file).strip }) if File.exist?(copyright_file)
     # deliver does not pick up Mac screenshots reliably – put them in the APP_DESKTOP set directly
     loc = version.get_app_store_version_localizations.find { |l| l.locale == app.primary_locale }
     dir = File.join(shots, app.primary_locale)
