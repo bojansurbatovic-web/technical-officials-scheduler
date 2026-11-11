@@ -43,7 +43,7 @@ web/            the app (HTML/CSS/plain JavaScript, no dependencies) – used by
   js/reference.js   rule data, generated from linux/wt_planner/reference.py
   js/app.js         screens; js/storage.js files & sharing (native bridge or browser storage)
 apple/          SwiftUI shell (iOS 16+, iPadOS, macOS 13+), XcodeGen project.yml, fastlane lanes
-site/           GitHub Pages home, privacy policy and support pages
+site/           trisport.me (GitHub Pages): home page for all apps, Scheduler pages in scheduler/, privacy and support
 linux/          Ubuntu desktop app (Python 3 + GTK 3) – the reference implementation
 tests/          engine & export tests against golden files from the Python engine, UI tests (Playwright)
 tools/          generators for reference data, examples, golden files, screenshots; Apple signing helper

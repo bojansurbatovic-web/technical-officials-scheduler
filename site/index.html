@@ -1,21 +1,407 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Technical Officials Scheduler</title><link rel="icon" href="icon.png"><link rel="stylesheet" href="style.css">
-<meta name="description" content="Plan Technical Official positions, meetings and briefings for triathlon events run under the World Triathlon Competition Rules."></head>
-<body><main>
-<header><img src="icon.png" alt=""><div><h1>Technical Officials Scheduler</h1><div class="muted">For iPhone, iPad, Mac, the web and Ubuntu</div></div></header>
-<div class="card">
-<p>Plan the Technical Officials of a triathlon event in minutes: every official gets a main position, short jobs are added as second positions without time clashes, and the meetings and briefings the rules require (Elite athletes’ briefing at 16:00 the day before, Jury meetings, rehearsals, TO briefings) are booked for the right people.</p>
-<p>See the plan as a table, personal schedules, a Gantt chart and a timeline, and export it to Excel, LibreOffice, your calendar or a picture.</p>
-<p><a class="btn" href="app/">Open the web version</a><a class="btn alt" href="https://github.com/bojansurbatovic-web/technical-officials-scheduler">Source code</a></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TriSport.me — Independent triathlon apps</title>
+<meta name="description" content="TriCarbon, TriAnatomy, TriOfficial and Technical Officials Scheduler: independent, educational triathlon apps for Apple devices. Not affiliated with World Triathlon.">
+<meta name="theme-color" content="#080d17">
+<link rel="canonical" href="https://trisport.me/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trisport.me/">
+<meta property="og:title" content="TriSport.me — Independent triathlon apps">
+<meta property="og:description" content="Four independent, educational apps for triathlon officials, organisers and athletes.">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20a7 7 0 0 1-7-7c0-6 5-9 16-9 0 9-3 16-9 16z"/><path d="M4 21c2-6 6-9 11-11"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4M8 15h3M14 15h2"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16M7 20h10M5 7h14M5 7l-3 7h6zM19 7l-3 7h6z"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5L7 21l5-3 5 3-1.5-7.5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="notice" role="note">
+  <div class="wrap">
+    <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+    <span>Independent project. Not affiliated with or endorsed by World Triathlon. Apps are informative and educational only.</span>
+    <a href="#independence">Read the notice</a>
+  </div>
 </div>
-<div class="card"><h2 style="margin-top:0">What it plans</h2>
-<ul>
-<li>Races of any World Triathlon format: super-sprint, sprint, standard, mixed relay, middle and long distance – over one or several days.</li>
-<li>Positions and duty windows from the World Triathlon TO Checklist 2025; rules from the Competition Rules; race-week schedule from the Event Organisers’ Manual.</li>
-<li>Who works which race, availability, preferred positions, locked choices, and radios needed.</li>
-<li>Your events stay on your device. No account, no tracking.</li>
-</ul></div>
-<footer><a href="privacy.html">Privacy policy</a> · <a href="support.html">Support</a><br>
-Independent tool – not affiliated with, endorsed by or sponsored by World Triathlon.</footer>
-</main></body></html>
+
+<header class="header">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="TriSport.me home">
+      <span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      TriSport.me
+    </a>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#apps">Apps</a>
+      <a href="#preview">Preview</a>
+      <a href="#officials">Officials</a>
+      <a href="#independence">Independence</a>
+      <a class="btn btn--primary btn--sm" href="scheduler/">Open Scheduler <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </nav>
+    <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-controls="nav" aria-expanded="false">
+      <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Independent triathlon apps</span>
+      <h1>Four apps for the people behind <em>swim, bike, run</em>.</h1>
+      <p class="lede">TriSport.me is the home of TriCarbon, TriAnatomy, TriOfficial and Technical Officials Scheduler: practical tools for technical officials, event organisers and athletes, available now for Apple devices.</p>
+      <div class="hero-cta">
+        <a class="btn btn--primary" href="#apps">See the apps <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn--ghost" href="app/">Open Scheduler web app</a>
+      </div>
+      <ul class="hero-meta">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>4 apps on the App Store</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Scheduler also on the web</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Informative and educational</li>
+      </ul>
+    </div>
+
+    <div class="shelf" aria-label="The apps">
+      <div class="shelf-head"><span>The collection</span><b>Available now</b></div>
+      <a class="shelf-row t-carbon" href="#tricarbon">
+        <span class="app-icon"><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg></span>
+        <span class="txt"><h3>TriCarbon</h3><p>Race carbon tracker and ISO 14001 register</p></span>
+        <span class="go"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+      </a>
+      <a class="shelf-row t-anatomy" href="#trianatomy">
+        <span class="app-icon"><svg class="icon" aria-hidden="true"><use href="#i-pulse"/></svg></span>
+        <span class="txt"><h3>TriAnatomy</h3><p>Triathlon strength and anatomy</p></span>
+        <span class="go"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+      </a>
+      <a class="shelf-row t-official" href="#triofficial">
+        <span class="app-icon"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span>
+        <span class="txt"><h3>TriOfficial</h3><p>TD, referee and TO checklists</p></span>
+        <span class="go"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+      </a>
+      <a class="shelf-row t-sched" href="#scheduler">
+        <span class="app-icon app-icon--img"><img src="assets/img/scheduler-icon.png" alt="" width="56" height="56"></span>
+        <span class="txt"><h3>Technical Officials Scheduler</h3><p>Positions, meetings and briefings, planned</p></span>
+        <span class="go"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APPS ================= -->
+<section class="section" id="apps">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">The apps</span>
+        <h2>Built by a triathlon person, for triathlon people.</h2>
+      </div>
+      <p>Each app does one job well. All four are published on the App Store for Apple devices, and the Scheduler also runs in any browser from this site.</p>
+    </div>
+
+    <div class="apps">
+
+      <article class="app t-carbon" id="tricarbon">
+        <div class="app-top">
+          <span class="app-icon app-icon--lg"><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg></span>
+          <div><div class="app-kind">Sustainability</div><h3>TriCarbon</h3></div>
+        </div>
+        <p class="app-desc">Estimate the carbon footprint of a triathlon or multisport event: per competitor, spectator, staff member and volunteer, and for the event as a whole.</p>
+        <ul class="app-feats">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Around 110 built-in emission factors for transport, accommodation, food, energy, waste and equipment</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Totals, per-person figures, charts by category and suggestions for reductions</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>An ISO 14001 environmental aspects register, pre-filled for triathlon</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>PDF and Excel reports in English or Montenegrin</li>
+        </ul>
+        <div class="chips"><span class="chip chip--live">App Store</span><span class="chip">iPhone</span><span class="chip">Free</span></div>
+        <div class="app-actions">
+          <a class="btn btn--store" data-store="tricarbon" href="https://apps.apple.com/us/app/tricarbon-race-carbon-tracker/id6826201612" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span><small>Download on the</small><b>App Store</b></span></a>
+          <a class="btn btn--ghost" href="#preview" data-open-tab="carbon">Try a preview</a>
+        </div>
+      </article>
+
+      <article class="app t-anatomy" id="trianatomy">
+        <div class="app-top">
+          <span class="app-icon app-icon--lg"><svg class="icon" aria-hidden="true"><use href="#i-pulse"/></svg></span>
+          <div><div class="app-kind">Training</div><h3>TriAnatomy</h3></div>
+        </div>
+        <p class="app-desc">A strength-training companion for triathletes. See which muscles each movement works, then build and run workouts and training plans for the swim, the bike and the run.</p>
+        <ul class="app-feats">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>132 strength exercises, plyometric drills and stretches with step-by-step instructions</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>An animated body model where the working muscles light up</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Workout builder with heart-rate zones and a guided timer</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Periodised plans for your calendar and Garmin .fit export</li>
+        </ul>
+        <div class="chips"><span class="chip chip--live">App Store</span><span class="chip">iPhone and iPad</span><span class="chip">Also on Android</span><span class="chip">Free</span></div>
+        <div class="app-actions">
+          <a class="btn btn--store" data-store="trianatomy" href="https://apps.apple.com/us/app/trianatomy/id6829890027" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span><small>Download on the</small><b>App Store</b></span></a>
+          <a class="btn btn--ghost" href="#preview" data-open-tab="anatomy">Try a preview</a>
+        </div>
+      </article>
+
+      <article class="app t-official" id="triofficial">
+        <div class="app-top">
+          <span class="app-icon app-icon--lg"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span>
+          <div><div class="app-kind">Officiating</div><h3>TriOfficial</h3></div>
+        </div>
+        <p class="app-desc">A reference tool for triathlon technical officials. Pick your role and your race, and see the duties before, during and after the event, the key race figures, and the rules and penalties that apply.</p>
+        <ul class="app-feats">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Checklists for Technical Delegates, referees, chief race officials and more</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Triathlon, duathlon, aquathlon, cross, winter and aquabike, from super sprint to long distance</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Tick off duties, add notes and export a report</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Educational only: the official Competition Rules always take precedence</li>
+        </ul>
+        <div class="chips"><span class="chip chip--live">App Store</span><span class="chip">iPhone</span><span class="chip">Free</span></div>
+        <div class="app-actions">
+          <a class="btn btn--store" data-store="triofficial" href="https://apps.apple.com/us/app/triofficial-race-officials/id6823983576" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span><small>Download on the</small><b>App Store</b></span></a>
+          <a class="btn btn--ghost" href="#officials">About the role</a>
+        </div>
+      </article>
+
+      <article class="app t-sched" id="scheduler">
+        <div class="app-top">
+          <span class="app-icon app-icon--lg app-icon--img"><img src="assets/img/scheduler-icon.png" alt="" width="72" height="72"></span>
+          <div><div class="app-kind">Race-day planning</div><h3>Technical Officials Scheduler</h3></div>
+        </div>
+        <p class="app-desc">Plan the technical officials of a triathlon event in minutes. Every official gets a main position, short jobs are added without time clashes, and the required meetings and briefings are booked for the right people.</p>
+        <ul class="app-feats">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Any race format, from super-sprint to long distance, over one or several days</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Table, personal schedules, Gantt chart and timeline views</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Export to Excel, LibreOffice, calendar or a picture</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>No account, no tracking: events stay on your device</li>
+        </ul>
+        <div class="chips"><span class="chip chip--live">App Store</span><span class="chip chip--live">Web app</span><span class="chip">iPhone, iPad and Mac</span><span class="chip">Ubuntu</span></div>
+        <div class="app-actions">
+          <a class="btn btn--store" data-store="scheduler" href="https://apps.apple.com/us/search?term=Technical%20Officials%20Scheduler" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg><span><small>Download on the</small><b>App Store</b></span></a>
+          <a class="btn btn--ghost" href="app/">Open web app <svg class="icon" aria-hidden="true"><use href="#i-out"/></svg></a>
+          <a class="btn btn--ghost" href="scheduler/">More about it</a>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="band">
+      <div>
+        <h3>The Scheduler lives on this site too</h3>
+        <p>No install needed. The web version of Technical Officials Scheduler runs at <code>trisport.me/app</code> on any computer, tablet or phone, works offline and can be added to the home screen.</p>
+      </div>
+      <a class="btn btn--primary" href="app/">Open the web app <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PREVIEW ================= -->
+<section class="section section--alt" id="preview">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Preview</span>
+        <h2>Get a feel for the apps.</h2>
+      </div>
+      <p>Two small interactive samples and a real screenshot. The samples are simplified illustrations, not the apps themselves.</p>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="App previews">
+      <button class="tab" role="tab" id="tab-carbon" aria-controls="panel-carbon" aria-selected="true"><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg>TriCarbon</button>
+      <button class="tab" role="tab" id="tab-sched" aria-controls="panel-sched" aria-selected="false" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>Scheduler</button>
+      <button class="tab" role="tab" id="tab-anatomy" aria-controls="panel-anatomy" aria-selected="false" tabindex="-1"><svg class="icon" aria-hidden="true"><use href="#i-pulse"/></svg>TriAnatomy</button>
+    </div>
+
+    <div class="stage">
+
+      <div role="tabpanel" id="panel-carbon" aria-labelledby="tab-carbon">
+        <div class="stage-head">
+          <div><h3>Event footprint estimate</h3><p>Move the sliders to see how participant numbers, course vehicles and travel distance change the picture.</p></div>
+          <span class="tag">Simplified illustration</span>
+        </div>
+        <div class="calc">
+          <div>
+            <div class="field">
+              <label for="c-people">Athletes and staff <output id="c-people-out" for="c-people">1,200</output></label>
+              <input type="range" id="c-people" min="100" max="3500" step="50" value="1200">
+            </div>
+            <div class="field">
+              <label for="c-vehicles">Motorbikes and lead vehicles <output id="c-vehicles-out" for="c-vehicles">16</output></label>
+              <input type="range" id="c-vehicles" min="2" max="40" value="16">
+            </div>
+            <div class="field">
+              <label for="c-travel">Typical travel to the event</label>
+              <select id="c-travel">
+                <option value="regional">Regional (about 150 km)</option>
+                <option value="continental" selected>Continental (about 800 km)</option>
+                <option value="world">Intercontinental (long-haul flights)</option>
+              </select>
+            </div>
+          </div>
+          <div class="result" aria-live="polite">
+            <div class="result-grid">
+              <div class="stat"><span>Estimated total CO₂</span><b class="green" id="c-total">34.4 t</b></div>
+              <div class="stat"><span>Per participant</span><b id="c-per">28.7 kg</b></div>
+            </div>
+            <div class="bars">
+              <div class="bar-row"><span>Participant travel</span><div class="bar"><i id="c-bar-travel" style="width:84%"></i></div><em id="c-pct-travel">84%</em></div>
+              <div class="bar-row"><span>Course vehicles</span><div class="bar"><i id="c-bar-veh" style="width:16%"></i></div><em id="c-pct-veh">16%</em></div>
+            </div>
+            <p class="fine">Figures here use rough placeholder factors to show the idea. They are not a verified emissions calculation and are not the method or the emission factors used in the app.</p>
+          </div>
+        </div>
+      </div>
+
+      <div role="tabpanel" id="panel-sched" aria-labelledby="tab-sched" hidden>
+        <div class="stage-head">
+          <div><h3>The whole team on one Gantt chart</h3><p>A screenshot of the app with its built-in example event: main positions, short jobs, and meetings and briefings for one race day.</p></div>
+          <a class="btn btn--primary btn--sm" href="app/">Open the web app <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+        <figure class="shot"><img src="assets/img/scheduler-gantt.jpg" alt="Technical Officials Scheduler showing a Gantt chart of eighteen officials and their duties across a race day" width="1600" height="1000" loading="lazy"></figure>
+      </div>
+
+      <div role="tabpanel" id="panel-anatomy" aria-labelledby="tab-anatomy" hidden>
+        <div class="stage-head">
+          <div><h3>Train the muscles each leg depends on</h3><p>Pick a discipline to see the kind of focus the app is organised around.</p></div>
+          <span class="tag">Sample content</span>
+        </div>
+        <div class="seg">
+          <button data-seg="swim" aria-pressed="true" style="--c:var(--swim)"><small>Leg 1</small><b>Swim</b></button>
+          <button data-seg="bike" aria-pressed="false" style="--c:var(--bike)"><small>Leg 2</small><b>Bike</b></button>
+          <button data-seg="run" aria-pressed="false" style="--c:var(--run)"><small>Leg 3</small><b>Run</b></button>
+        </div>
+        <div class="anat" aria-live="polite">
+          <div>
+            <h4 id="a-title"></h4>
+            <p class="muscles"><b>Primary muscles:</b> <span id="a-muscles"></span></p>
+            <blockquote id="a-note"></blockquote>
+          </div>
+          <div>
+            <h5>Example exercises</h5>
+            <ul id="a-list"></ul>
+          </div>
+        </div>
+        <p class="fine">Educational content only, not medical or coaching advice. Check with a qualified professional before starting a new training programme.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= OFFICIALS ================= -->
+<section class="section" id="officials">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Why these apps exist</span>
+        <h2>What technical officials do.</h2>
+      </div>
+      <p>Technical officials help every athlete race on a safe and fair field of play. This is a general, informal overview of the work the apps are meant to support.</p>
+    </div>
+    <div class="roles">
+      <article class="role" style="--c:var(--swim)">
+        <span class="glyph"><svg class="icon" aria-hidden="true"><use href="#i-waves"/></svg></span>
+        <h3>Field of play safety</h3>
+        <p>Checking the swim start and course, the bike and run routes, and access for medical teams before and during the race.</p>
+      </article>
+      <article class="role" style="--c:var(--bike)">
+        <span class="glyph"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg></span>
+        <h3>Applying the rules</h3>
+        <p>Observing equipment, uniforms and conduct on course, and applying the competition rules consistently for everyone.</p>
+      </article>
+      <article class="role" style="--c:var(--green)">
+        <span class="glyph"><svg class="icon" aria-hidden="true"><use href="#i-timer"/></svg></span>
+        <h3>Transition and penalties</h3>
+        <p>Watching mount and dismount lines, racking and helmet use, and managing time penalties where they apply.</p>
+      </article>
+      <article class="role" style="--c:var(--run)">
+        <span class="glyph"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span>
+        <h3>Results and reviews</h3>
+        <p>Supporting athlete briefings, handling protests and appeals through the proper process, and confirming results.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INDEPENDENCE ================= -->
+<section class="section section--alt" id="independence">
+  <div class="wrap">
+    <div class="indep">
+      <span class="glyph"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></span>
+      <div>
+        <span class="eyebrow">Important notice</span>
+        <h2 style="margin-top:14px">An independent project, not an official one.</h2>
+        <p>TriSport.me and the apps presented here (TriCarbon, TriAnatomy, TriOfficial and Technical Officials Scheduler) are created and published independently. There is no official relationship of any kind between TriSport.me and World Triathlon: the site and the apps are not affiliated with, endorsed by, sponsored by or approved by World Triathlon or any national federation.</p>
+        <ul>
+          <li><b>Informative and educational</b>The apps are provided purely for information and education. They carry no official status.</li>
+          <li><b>Official sources prevail</b>For rules, procedures and decisions, always rely on the official publications of World Triathlon and your national federation.</li>
+          <li><b>No guarantee</b>Content may be incomplete or out of date. It is not legal, medical, coaching or officiating advice.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="#top"><span class="mark" aria-hidden="true"><span></span><span></span><span></span></span>TriSport.me</a>
+        <p class="about">Independent, educational apps for triathlon technical officials, event organisers and athletes.</p>
+      </div>
+      <div>
+        <h4>Apps</h4>
+        <ul>
+          <li><a href="#tricarbon">TriCarbon</a></li>
+          <li><a href="#trianatomy">TriAnatomy</a></li>
+          <li><a href="#triofficial">TriOfficial</a></li>
+          <li><a href="#scheduler">Technical Officials Scheduler</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Site</h4>
+        <ul>
+          <li><a href="scheduler/">Scheduler</a></li>
+          <li><a href="app/">Scheduler web app</a></li>
+          <li><a href="scheduler/privacy.html">Scheduler privacy</a></li>
+          <li><a href="scheduler/support.html">Scheduler support</a></li>
+          <li><a href="#preview">Previews</a></li>
+          <li><a href="#officials">About officials</a></li>
+          <li><a href="#independence">Independence notice</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="legal">
+      <p><strong>Not affiliated with World Triathlon.</strong> TriSport.me is an independent project with no official connection to World Triathlon. The apps are purely informative and educational and are not official World Triathlon products.</p>
+      <p>“World Triathlon” is the name of its respective owner and is used here only to describe the sport's governing body. App Store, iPhone and iPad are trademarks of Apple Inc. Garmin is a trademark of Garmin Ltd. Android is a trademark of Google LLC.</p>
+      <p>© <span id="year">2026</span> TriSport.me</p>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="assets/js/site.js"></script>
+</body>
+</html>
