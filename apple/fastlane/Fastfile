@@ -169,9 +169,67 @@ def report_status
   end
 end
 
+REVIEWABLE_STATES = %w[PREPARE_FOR_SUBMISSION READY_FOR_REVIEW DEVELOPER_REJECTED REJECTED METADATA_REJECTED INVALID_BINARY].freeze
+
+def version_for(app, p)
+  app.get_app_store_versions.find { |v| v.platform == store_platform(p) && REVIEWABLE_STATES.include?(v.app_store_state) }
+end
+
+# Review notes (fastlane/metadata/review_information/notes.txt), contact (copied from the other platform when empty)
+# and an optional screen recording (REVIEW_ATTACHMENT) for the App Review Information of one platform.
+def update_review_info(p)
+  asc_key
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  v = version_for(app, p)
+  UI.user_error!("No #{p} version that can be edited for review") unless v
+  notes = File.read(File.join(metadata_dir, "review_information", "notes.txt")).strip
+  detail = (v.fetch_app_store_review_detail rescue nil) ||
+           v.create_app_store_review_detail(attributes: { notes: notes, demo_account_required: false })
+  attrs = { notes: notes, demo_account_required: false }
+  if detail.contact_email.to_s.empty?
+    other = app.get_app_store_versions.find { |x| x.platform != store_platform(p) }
+    src = other && (other.fetch_app_store_review_detail rescue nil)
+    if src
+      attrs.merge!(contact_first_name: src.contact_first_name, contact_last_name: src.contact_last_name,
+                   contact_phone: src.contact_phone, contact_email: src.contact_email)
+    end
+  end
+  detail.update(attributes: attrs)
+  UI.success("App Review notes updated for #{p} #{v.version_string} (#{v.app_store_state})")
+  att = ENV["REVIEW_ATTACHMENT"].to_s
+  if !att.empty? && File.exist?(att)
+    detail = v.fetch_app_store_review_detail
+    (detail.app_store_review_attachments || []).each { |old| (old.delete! rescue nil) }
+    Spaceship::ConnectAPI::AppStoreReviewAttachment.create(app_store_review_detail_id: detail.id, path: att)
+    UI.success("Attached #{File.basename(att)} (#{(File.size(att) / 1048576.0).round(1)} MB) to App Review Information (#{p})")
+  end
+end
+
+def submit_version(p)
+  asc_key
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  v = version_for(app, p)
+  UI.user_error!("No #{p} version waiting to be submitted") unless v
+  sub = app.get_ready_review_submission(platform: store_platform(p)) || app.create_review_submission(platform: store_platform(p))
+  begin
+    sub.add_app_store_version_to_review_items(app_store_version_id: v.id)
+  rescue => e
+    UI.message("Version already in the review submission (#{e.message.lines.first.to_s.strip})")
+  end
+  begin
+    sub.submit_for_review
+  rescue Spaceship::UnexpectedResponse => e
+    UI.error("App Store Connect says: #{e.message}")
+    raise
+  end
+  UI.success("#{p} version #{v.version_string} submitted for App Review")
+end
+
 platform :ios do
   desc "Upload the App Store listing (text and screenshots) – does not submit for review"
   lane(:listing) { upload_listing("ios") }
+  lane(:review_info) { update_review_info("ios") }
+  lane(:submit) { submit_version("ios") }
   desc "Print what App Store Connect has: versions, languages, screenshots, builds"
   lane(:status) { report_status }
 end
@@ -249,41 +307,6 @@ platform :mac do
   desc "Upload the Mac App Store listing (text and screenshots) – does not submit for review"
   lane(:listing) { upload_listing("mac") }
 
-  desc "Submit the Mac version for App Review (review contact copied from the iPhone/iPad version)"
-  lane :submit do
-    asc_key
-    app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
-    mac_v = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
-    UI.user_error!("No Mac version waiting to be submitted") unless mac_v
-    ios_v = app.get_app_store_versions.find { |v| v.platform == Spaceship::ConnectAPI::Platform::IOS }
-    src = (ios_v.fetch_app_store_review_detail rescue nil)
-    dst = mac_v.fetch_app_store_review_detail
-    if src
-      fields = { contact_first_name: src.contact_first_name, contact_last_name: src.contact_last_name,
-                 contact_phone: src.contact_phone, contact_email: src.contact_email,
-                 demo_account_required: false, notes: (dst.notes.to_s.empty? ? src.notes : dst.notes) }
-      dst.update(attributes: fields)
-      UI.success("App Review contact copied from the iPhone/iPad version")
-    end
-    sub = app.get_ready_review_submission(platform: Spaceship::ConnectAPI::Platform::MAC_OS) ||
-          app.create_review_submission(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
-    mac_v.get_app_store_version_localizations.each do |l|
-      UI.message("LOC #{l.locale}: description=#{l.description.to_s.length} keywords=#{l.keywords.to_s.length} " \
-                 "support=#{l.support_url} marketing=#{l.marketing_url} promo=#{l.promotional_text.to_s.length}")
-    end
-    UI.message("VERSION copyright=#{mac_v.copyright.inspect} release_type=#{mac_v.release_type.inspect}")
-    begin
-      begin
-        sub.add_app_store_version_to_review_items(app_store_version_id: mac_v.id)
-      rescue => e
-        UI.message("Version already in the review submission (#{e.message.lines.first.to_s.strip})")
-      end
-      sub.submit_for_review
-    rescue Spaceship::UnexpectedResponse => e
-      info = e.respond_to?(:error_info) ? e.error_info : nil
-      UI.error("App Store Connect says: #{(info || e.message).to_json}")
-      raise
-    end
-    UI.success("Mac version #{mac_v.version_string} submitted for App Review")
-  end
+  lane(:review_info) { update_review_info("mac") }
+  lane(:submit) { submit_version("mac") }
 end

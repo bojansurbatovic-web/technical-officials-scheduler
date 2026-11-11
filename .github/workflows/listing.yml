@@ -1,28 +1,31 @@
 name: Upload App Store listing
-# Puts the description, keywords, links, categories, review notes and the iPhone/iPad screenshots
-# on the App Store version page. It does NOT submit the app for review.
+# App Store Connect tasks that need no Mac:
+#   listing      – text, links, categories, review notes and screenshots on the version page, and attach the newest build
+#   review-info  – only the App Review notes (+ optional screen recording from the review-assets branch)
+#   submit       – submit the version for App Review
+#   status       – just show what App Store Connect has
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: App Store version to fill in (must match the uploaded build)
-        default: "1.0.0"
+      task:
+        description: What to do
+        type: choice
+        options: [listing, review-info, submit, review-info-and-submit, status]
+        default: listing
       platform:
         description: Which App Store page
         type: choice
         options: [iphone-ipad, mac, both]
-        default: iphone-ipad
-      submit_mac:
-        description: Submit the Mac version for App Review after uploading
-        type: boolean
-        default: false
-      only_status:
-        description: Only show what App Store Connect has (no upload)
-        type: boolean
-        default: false
+        default: both
+      version:
+        description: App Store version (must match the uploaded build)
+        default: "1.0.0"
+      attachment:
+        description: Screen recording for App Review – file name in the review-assets branch (optional)
+        default: ""
 
 jobs:
-  listing:
+  appstore:
     runs-on: ubuntu-latest
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -31,6 +34,7 @@ jobs:
       ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
       BUNDLE_ID: ${{ vars.BUNDLE_ID }}
       APP_VERSION: ${{ inputs.version }}
+      TASK: ${{ inputs.task }}
       FASTLANE_SKIP_UPDATE_CHECK: "1"
       FASTLANE_HIDE_CHANGELOG: "1"
     steps:
@@ -45,14 +49,32 @@ jobs:
           mkdir -p apple/fastlane/screenshots-ios/en-GB apple/fastlane/screenshots-mac/en-GB
           cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots-ios/en-GB/
           cp app-store/screenshots/mac-*.png apple/fastlane/screenshots-mac/en-GB/
-      - name: Upload the iPhone / iPad listing
-        if: ${{ !inputs.only_status && inputs.platform != 'mac' }}
-        run: cd apple && fastlane ios listing
-      - name: Upload the Mac listing
-        if: ${{ !inputs.only_status && inputs.platform != 'iphone-ipad' }}
-        run: cd apple && fastlane mac listing
-      - name: Submit the Mac version for review
-        if: ${{ inputs.submit_mac }}
-        run: cd apple && fastlane mac submit
+      - name: Screen recording for App Review
+        if: ${{ inputs.attachment != '' }}
+        run: |
+          git fetch --depth 1 origin review-assets
+          git show "origin/review-assets:${{ inputs.attachment }}" > "$RUNNER_TEMP/${{ inputs.attachment }}"
+          echo "REVIEW_ATTACHMENT=$RUNNER_TEMP/${{ inputs.attachment }}" >> "$GITHUB_ENV"
+      - name: iPhone / iPad
+        if: ${{ inputs.task != 'status' && inputs.platform != 'mac' }}
+        run: |
+          cd apple
+          case "$TASK" in
+            listing) fastlane ios listing ;;
+            review-info) fastlane ios review_info ;;
+            submit) fastlane ios submit ;;
+            review-info-and-submit) fastlane ios review_info && fastlane ios submit ;;
+          esac
+      - name: Mac
+        if: ${{ inputs.task != 'status' && inputs.platform != 'iphone-ipad' }}
+        run: |
+          cd apple
+          case "$TASK" in
+            listing) fastlane mac listing ;;
+            review-info) fastlane mac review_info ;;
+            submit) fastlane mac submit ;;
+            review-info-and-submit) fastlane mac review_info && fastlane mac submit ;;
+          esac
       - name: What App Store Connect has now
+        if: always()
         run: cd apple && fastlane ios status
