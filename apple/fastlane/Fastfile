@@ -61,7 +61,8 @@ platform :ios do
       run_precheck_before_submit: false, ignore_language_directory_validation: true
     )
     app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
-    keep = Dir.children("fastlane/metadata").select { |d| File.directory?("fastlane/metadata/#{d}") && d != "review_information" }
+    meta = File.directory?("metadata") ? "metadata" : "fastlane/metadata"   # lane code runs inside fastlane/
+    keep = Dir.children(meta).select { |d| File.directory?(File.join(meta, d)) && d != "review_information" }
     keep << app.primary_locale
     version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
     if version
