@@ -12,6 +12,10 @@ on:
         type: choice
         options: [iphone-ipad, mac, both]
         default: iphone-ipad
+      submit_mac:
+        description: Submit the Mac version for App Review after uploading
+        type: boolean
+        default: false
       only_status:
         description: Only show what App Store Connect has (no upload)
         type: boolean
@@ -47,5 +51,8 @@ jobs:
       - name: Upload the Mac listing
         if: ${{ !inputs.only_status && inputs.platform != 'iphone-ipad' }}
         run: cd apple && fastlane mac listing
+      - name: Submit the Mac version for review
+        if: ${{ inputs.submit_mac }}
+        run: cd apple && fastlane mac submit
       - name: What App Store Connect has now
         run: cd apple && fastlane ios status

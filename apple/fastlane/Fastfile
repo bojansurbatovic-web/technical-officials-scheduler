@@ -226,4 +226,27 @@ platform :mac do
 
   desc "Upload the Mac App Store listing (text and screenshots) – does not submit for review"
   lane(:listing) { upload_listing("mac") }
+
+  desc "Submit the Mac version for App Review (review contact copied from the iPhone/iPad version)"
+  lane :submit do
+    asc_key
+    app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+    mac_v = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
+    UI.user_error!("No Mac version waiting to be submitted") unless mac_v
+    ios_v = app.get_app_store_versions.find { |v| v.platform == Spaceship::ConnectAPI::Platform::IOS }
+    src = (ios_v.fetch_app_store_review_detail rescue nil)
+    dst = mac_v.fetch_app_store_review_detail
+    if src
+      fields = { contact_first_name: src.contact_first_name, contact_last_name: src.contact_last_name,
+                 contact_phone: src.contact_phone, contact_email: src.contact_email,
+                 demo_account_required: false, notes: (dst.notes.to_s.empty? ? src.notes : dst.notes) }
+      dst.update(attributes: fields)
+      UI.success("App Review contact copied from the iPhone/iPad version")
+    end
+    sub = app.get_ready_review_submission(platform: Spaceship::ConnectAPI::Platform::MAC_OS) ||
+          app.create_review_submission(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
+    sub.add_app_store_version_to_review_items(app_store_version_id: mac_v.id)
+    sub.submit_for_review
+    UI.success("Mac version #{mac_v.version_string} submitted for App Review")
+  end
 end
