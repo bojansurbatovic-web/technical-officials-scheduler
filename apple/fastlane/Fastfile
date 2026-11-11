@@ -182,7 +182,7 @@ platform :mac do
                           installerSigningCertificate: "3rd Party Mac Developer Installer" },
         output_directory: "build", output_name: "TOScheduler.pkg"
       )
-      upload_to_testflight(api_key: key, pkg: "build/TOScheduler.pkg", app_platform: "osx", skip_waiting_for_build_processing: true)
+      upload_to_testflight(api_key: key, pkg: lane_context[SharedValues::PKG_OUTPUT_PATH], app_platform: "osx", skip_waiting_for_build_processing: true)
     ensure
       if temp_id
         begin
