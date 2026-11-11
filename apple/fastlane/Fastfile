@@ -210,11 +210,23 @@ def submit_version(p)
   app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
   v = version_for(app, p)
   UI.user_error!("No #{p} version waiting to be submitted") unless v
-  sub = app.get_ready_review_submission(platform: store_platform(p)) || app.create_review_submission(platform: store_platform(p))
-  begin
-    sub.add_app_store_version_to_review_items(app_store_version_id: v.id)
-  rescue => e
-    UI.message("Version already in the review submission (#{e.message.lines.first.to_s.strip})")
+  subs = app.get_review_submissions(filter: { platform: store_platform(p) }, includes: "items") rescue []
+  subs.each { |x| UI.message("Review submission #{x.id} state=#{x.state} items=#{(x.items || []).count}") }
+  # a submission Apple sent back ("Information Needed" / rejection) is resubmitted as it is
+  sub = subs.find { |x| x.state == "UNRESOLVED_ISSUES" }
+  if sub
+    # remove empty submissions left over from earlier attempts
+    subs.select { |x| x.state == "READY_FOR_REVIEW" && (x.items || []).empty? }.each do |x|
+      (x.cancel_submission rescue nil)
+    end
+    UI.message("Resubmitting the submission Apple sent back (#{sub.id})")
+  else
+    sub = app.get_ready_review_submission(platform: store_platform(p)) || app.create_review_submission(platform: store_platform(p))
+    begin
+      sub.add_app_store_version_to_review_items(app_store_version_id: v.id)
+    rescue => e
+      UI.message("Version already in the review submission (#{e.message.lines.first.to_s.strip})")
+    end
   end
   begin
     sub.submit_for_review
