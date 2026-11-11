@@ -177,7 +177,9 @@ platform :mac do
       build_app(
         project: "TOScheduler.xcodeproj", scheme: "TOScheduler-macOS", configuration: "Release",
         export_method: "app-store", xcargs: signing_args(profile),
-        export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
+        export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile },
+                          signingCertificate: "Apple Distribution",
+                          installerSigningCertificate: "3rd Party Mac Developer Installer" },
         output_directory: "build", output_name: "TOScheduler.pkg"
       )
       upload_to_testflight(api_key: key, pkg: "build/TOScheduler.pkg", app_platform: "osx", skip_waiting_for_build_processing: true)
