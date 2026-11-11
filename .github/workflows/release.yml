@@ -29,7 +29,7 @@ env:
 jobs:
   iphone-ipad:
     if: github.event_name == 'push' || inputs.platform != 'mac'
-    runs-on: macos-15
+    runs-on: macos-15-intel   # Intel Mac machines: the Apple-silicon ones were at capacity
     steps:
       - uses: actions/checkout@v4
       - name: Check that the Apple secrets are set
@@ -64,7 +64,7 @@ jobs:
 
   mac:
     if: github.event_name == 'workflow_dispatch' && inputs.platform != 'iphone-ipad'
-    runs-on: macos-15
+    runs-on: macos-15-intel   # Intel Mac machines: the Apple-silicon ones were at capacity
     env:
       MAC_INSTALLER_P12_BASE64: ${{ secrets.MAC_INSTALLER_P12_BASE64 }}
       MAC_INSTALLER_PASSWORD: ${{ secrets.MAC_INSTALLER_PASSWORD }}
