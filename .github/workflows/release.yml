@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check that the Apple secrets are set
         run: |
-          for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD MAC_INSTALLER_P12_BASE64 MAC_INSTALLER_PASSWORD; do
+          for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD; do
             if [ -z "${!v}" ]; then echo "::error::Secret $v is missing – see PUBLISHING.md, step 4 (Mac)"; exit 1; fi
           done
           echo "APP_VERSION=${APP_VERSION#v}" >> "$GITHUB_ENV"
@@ -91,9 +91,12 @@ jobs:
       - name: Certificates
         run: |
           echo "$DIST_CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
-          echo "$MAC_INSTALLER_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/installer.p12"
           echo "DIST_CERT_PATH=$RUNNER_TEMP/dist.p12" >> "$GITHUB_ENV"
-          echo "MAC_INSTALLER_CERT_PATH=$RUNNER_TEMP/installer.p12" >> "$GITHUB_ENV"
+          # optional: without these secrets the lane makes a temporary installer certificate for this run
+          if [ -n "$MAC_INSTALLER_P12_BASE64" ]; then
+            echo "$MAC_INSTALLER_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/installer.p12"
+            echo "MAC_INSTALLER_CERT_PATH=$RUNNER_TEMP/installer.p12" >> "$GITHUB_ENV"
+          fi
       - name: Build, sign and upload
         run: cd apple && fastlane mac beta
       - uses: actions/upload-artifact@v4

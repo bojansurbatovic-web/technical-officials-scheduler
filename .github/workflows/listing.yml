@@ -7,6 +7,11 @@ on:
       version:
         description: App Store version to fill in (must match the uploaded build)
         default: "1.0.0"
+      platform:
+        description: Which App Store page
+        type: choice
+        options: [iphone-ipad, mac, both]
+        default: iphone-ipad
       only_status:
         description: Only show what App Store Connect has (no upload)
         type: boolean
@@ -33,10 +38,14 @@ jobs:
         run: gem install fastlane -N
       - name: Screenshots
         run: |
-          mkdir -p apple/fastlane/screenshots/en-GB
-          cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots/en-GB/
-      - name: Upload the listing
-        if: ${{ !inputs.only_status }}
+          mkdir -p apple/fastlane/screenshots-ios/en-GB apple/fastlane/screenshots-mac/en-GB
+          cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots-ios/en-GB/
+          cp app-store/screenshots/mac-*.png apple/fastlane/screenshots-mac/en-GB/
+      - name: Upload the iPhone / iPad listing
+        if: ${{ !inputs.only_status && inputs.platform != 'mac' }}
         run: cd apple && fastlane ios listing
+      - name: Upload the Mac listing
+        if: ${{ !inputs.only_status && inputs.platform != 'iphone-ipad' }}
+        run: cd apple && fastlane mac listing
       - name: What App Store Connect has now
         run: cd apple && fastlane ios status

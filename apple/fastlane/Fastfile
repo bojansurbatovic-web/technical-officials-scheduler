@@ -51,92 +51,139 @@ platform :ios do
   end
 end
 
-platform :ios do
-  desc "Upload the App Store listing (text and screenshots) for this version – does not submit for review"
-  lane :listing do
-    upload_to_app_store(
-      api_key: asc_key, app_identifier: BUNDLE_ID, platform: "ios", app_version: VERSION,
-      skip_binary_upload: true, metadata_path: "fastlane/metadata", screenshots_path: "fastlane/screenshots",
-      overwrite_screenshots: true, submit_for_review: false, force: true,
-      run_precheck_before_submit: false, ignore_language_directory_validation: true
-    )
-    app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
-    meta = File.directory?("metadata") ? "metadata" : "fastlane/metadata"   # lane code runs inside fastlane/
-    keep = Dir.children(meta).select { |d| File.directory?(File.join(meta, d)) && d != "review_information" }
-    keep << app.primary_locale
-    version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
-    if version
-      # languages that are not in fastlane/metadata (e.g. an earlier upload in the wrong language) are removed
-      version.get_app_store_version_localizations.each do |loc|
-        next if keep.include?(loc.locale)
-        begin
-          loc.delete!
-          UI.message("Removed language #{loc.locale} from version #{version.version_string}")
-        rescue => e
-          UI.important("Could not remove #{loc.locale}: #{e.message}")
-        end
-      end
-      # attach the newest processed build to this version
-      build = app.get_builds(sort: "-uploadedDate").find { |b| b.processing_state == "VALID" && !b.expired }
-      if build
-        begin
-          version.select_build(build_id: build.id)
-          UI.success("Build #{build.version} attached to version #{version.version_string}")
-        rescue => e
-          UI.important("Could not attach build #{build.version}: #{e.message}")
-        end
-      else
-        UI.important("No processed build yet – run this again once TestFlight shows the build")
-      end
-    end
+# ---------------------------------------------------------------- App Store listing (both platforms)
+def store_platform(p)
+  p.to_s == "mac" ? Spaceship::ConnectAPI::Platform::MAC_OS : Spaceship::ConnectAPI::Platform::IOS
+end
+
+def metadata_dir
+  File.directory?("metadata") ? "metadata" : "fastlane/metadata"   # lane code runs inside fastlane/
+end
+
+def upload_listing(p)
+  mac = p.to_s == "mac"
+  shots = File.directory?("screenshots-#{p}") ? "screenshots-#{p}" : "fastlane/screenshots-#{p}"
+  upload_to_app_store(
+    api_key: asc_key, app_identifier: BUNDLE_ID, platform: mac ? "osx" : "ios", app_version: VERSION,
+    skip_binary_upload: true, metadata_path: metadata_dir, screenshots_path: shots,
+    overwrite_screenshots: true, submit_for_review: false, force: true,
+    run_precheck_before_submit: false, ignore_language_directory_validation: true
+  )
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  keep = Dir.children(metadata_dir).select { |d| File.directory?(File.join(metadata_dir, d)) && d != "review_information" }
+  keep << app.primary_locale
+  version = app.get_edit_app_store_version(platform: store_platform(p))
+  return unless version
+  version.get_app_store_version_localizations.each do |loc|
+    next if keep.include?(loc.locale)
     begin
-      info = app.fetch_edit_app_info
-      (info ? info.get_app_info_localizations : []).each do |loc|
-        next if keep.include?(loc.locale)
-        loc.delete!
-        UI.message("Removed app-info language #{loc.locale}")
-      end
+      loc.delete!
+      UI.message("Removed language #{loc.locale} from #{p} version #{version.version_string}")
     rescue => e
-      UI.important("App info languages unchanged: #{e.message}")
+      UI.important("Could not remove #{loc.locale}: #{e.message}")
     end
+  end
+  build = app.get_builds(filter: { "preReleaseVersion.platform" => store_platform(p) }, sort: "-uploadedDate")
+             .find { |b| b.processing_state == "VALID" && !b.expired }
+  if build
+    begin
+      version.select_build(build_id: build.id)
+      UI.success("Build #{build.version} attached to #{p} version #{version.version_string}")
+    rescue => e
+      UI.important("Could not attach build #{build.version}: #{e.message}")
+    end
+  else
+    UI.important("No processed #{p} build yet – run this again once TestFlight shows the build")
+  end
+end
+
+def report_status
+  asc_key
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  UI.user_error!("No app with bundle ID #{BUNDLE_ID} in App Store Connect") unless app
+  UI.message("APP #{app.name} id=#{app.id} primary_locale=#{app.primary_locale}")
+  app.get_app_store_versions.each do |v|
+    UI.message("VERSION #{v.platform} #{v.version_string} state=#{v.app_store_state}")
+    v.get_app_store_version_localizations.each do |loc|
+      sets = loc.get_app_screenshot_sets
+      info = sets.map { |st| "#{st.screenshot_display_type}=#{(st.app_screenshots || []).count}" }.join(", ")
+      UI.message("   LOCALE #{loc.locale}: #{info.empty? ? 'no screenshots' : info}")
+    end
+    build = (v.build rescue nil)
+    UI.message("   BUILD attached: #{build ? build.version : 'none'}")
+  end
+  app.get_builds(sort: "-uploadedDate").first(6).each do |b|
+    plat = (b.pre_release_version.platform rescue "?")
+    UI.message("BUILD #{plat} #{b.version} state=#{b.processing_state} expired=#{b.expired}")
   end
 end
 
 platform :ios do
-  desc "Print what App Store Connect has for this app: versions, languages, screenshots, builds"
-  lane :status do
-    asc_key
-    app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
-    UI.user_error!("No app with bundle ID #{BUNDLE_ID} in App Store Connect") unless app
-    UI.message("APP #{app.name} id=#{app.id} primary_locale=#{app.primary_locale}")
-    app.get_app_store_versions.each do |v|
-      UI.message("VERSION #{v.platform} #{v.version_string} state=#{v.app_store_state}")
-      v.get_app_store_version_localizations.each do |loc|
-        sets = loc.get_app_screenshot_sets
-        info = sets.map { |st| "#{st.screenshot_display_type}=#{(st.app_screenshots || []).count}" }.join(", ")
-        UI.message("   LOCALE #{loc.locale}: #{info.empty? ? 'no screenshots' : info}")
-      end
-      build = v.build rescue nil
-      UI.message("   BUILD attached: #{build ? build.version : 'none'}")
-    end
-    app.get_builds.first(5).each { |b| UI.message("BUILD #{b.version} state=#{b.processing_state} expired=#{b.expired}") }
-  end
+  desc "Upload the App Store listing (text and screenshots) – does not submit for review"
+  lane(:listing) { upload_listing("ios") }
+  desc "Print what App Store Connect has: versions, languages, screenshots, builds"
+  lane(:status) { report_status }
+end
+
+# ---------------------------------------------------------------- Mac
+# The .pkg uploaded to the Mac App Store must be signed with a "Mac Installer Distribution" certificate.
+# If the secrets MAC_INSTALLER_P12_BASE64 / MAC_INSTALLER_PASSWORD are not set, a temporary installer
+# certificate is created with the API key for this run only and revoked again at the end.
+def temp_installer_certificate
+  require "openssl"
+  require "base64"
+  key = OpenSSL::PKey::RSA.new(2048)
+  csr = OpenSSL::X509::Request.new
+  csr.version = 0
+  csr.subject = OpenSSL::X509::Name.parse("/CN=Technical Officials Scheduler build")
+  csr.public_key = key.public_key
+  csr.sign(key, OpenSSL::Digest::SHA256.new)
+  cert = Spaceship::ConnectAPI::Certificate.create(certificate_type: "MAC_INSTALLER_DISTRIBUTION", csr_content: csr.to_pem)
+  dir = ENV["RUNNER_TEMP"] || Dir.tmpdir
+  key_path = File.join(dir, "installer-temp.key")
+  cer_path = File.join(dir, "installer-temp.cer")
+  File.write(key_path, key.to_pem)
+  File.binwrite(cer_path, Base64.decode64(cert.certificate_content))
+  kc = File.expand_path("~/Library/Keychains/#{KEYCHAIN}-db")
+  sh("security import '#{key_path}' -k '#{kc}' -t priv -f openssl -A")
+  sh("security import '#{cer_path}' -k '#{kc}' -A")
+  sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k '' '#{kc}' > /dev/null")
+  File.delete(key_path)
+  UI.success("Temporary Mac Installer Distribution certificate #{cert.id} created")
+  cert.id
 end
 
 platform :mac do
-  desc "Build the Mac app and upload it to TestFlight (needs the Mac Installer Distribution certificate too)"
+  desc "Build the Mac app and upload it to TestFlight"
   lane :beta do
     key = asc_key
-    prepare_keychain([[ENV.fetch("DIST_CERT_PATH"), ENV.fetch("DIST_CERT_PASSWORD")],
-                      [ENV.fetch("MAC_INSTALLER_CERT_PATH"), ENV.fetch("MAC_INSTALLER_PASSWORD")]])
-    get_provisioning_profile(api_key: key, app_identifier: BUNDLE_ID, team_id: TEAM_ID, platform: "macos")
-    profile = lane_context[SharedValues::SIGH_NAME]
-    build_app(
-      project: "TOScheduler.xcodeproj", scheme: "TOScheduler-macOS", configuration: "Release",
-      export_method: "app-store", xcargs: signing_args(profile),
-      export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
-      output_directory: "build", output_name: "TOScheduler.pkg"
-    )
-    upload_to_testflight(api_key: key, pkg: "build/TOScheduler.pkg", app_platform: "osx", skip_waiting_for_build_processing: true)
+    certs = [[ENV.fetch("DIST_CERT_PATH"), ENV.fetch("DIST_CERT_PASSWORD")]]
+    have_installer = !ENV["MAC_INSTALLER_CERT_PATH"].to_s.empty?
+    certs << [ENV["MAC_INSTALLER_CERT_PATH"], ENV["MAC_INSTALLER_PASSWORD"].to_s] if have_installer
+    prepare_keychain(certs)
+    temp_id = have_installer ? nil : temp_installer_certificate
+    begin
+      get_provisioning_profile(api_key: key, app_identifier: BUNDLE_ID, team_id: TEAM_ID, platform: "macos")
+      profile = lane_context[SharedValues::SIGH_NAME]
+      build_app(
+        project: "TOScheduler.xcodeproj", scheme: "TOScheduler-macOS", configuration: "Release",
+        export_method: "app-store", xcargs: signing_args(profile),
+        export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
+        output_directory: "build", output_name: "TOScheduler.pkg"
+      )
+      upload_to_testflight(api_key: key, pkg: "build/TOScheduler.pkg", app_platform: "osx", skip_waiting_for_build_processing: true)
+    ensure
+      if temp_id
+        begin
+          Spaceship::ConnectAPI.delete_certificate(certificate_id: temp_id)
+          UI.message("Temporary installer certificate revoked")
+        rescue => e
+          UI.important("Could not revoke temporary installer certificate #{temp_id}: #{e.message}")
+        end
+      end
+    end
   end
+
+  desc "Upload the Mac App Store listing (text and screenshots) – does not submit for review"
+  lane(:listing) { upload_listing("mac") }
 end
