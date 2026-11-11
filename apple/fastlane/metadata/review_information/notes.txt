@@ -1,0 +1,1 @@
+No sign-in is needed. The app opens with an example event (two Elite races, 18 placeholder officials named TO 01–TO 18). Plan → Assignments shows the generated plan; Setup lets you change races and officials; More → Export & share creates Excel, calendar and picture files. The app works fully offline and makes no network requests.

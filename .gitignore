@@ -19,3 +19,4 @@ __pycache__/
 *.mobileprovision
 *.base64.txt
 .DS_Store
+apple/fastlane/screenshots/

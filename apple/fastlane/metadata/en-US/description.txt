@@ -1,0 +1,17 @@
+Technical Officials Scheduler plans the Technical Officials (TOs) of a triathlon event run under the World Triathlon Competition Rules.
+
+Enter your races and your team, and the planner:
+• gives every official a main position – Head Referee, CRO, Chief Swim, Chief Bike, Chief Run, Finish, Penalty Box, Wheel Stations, Registration, Technology and more
+• adds the short jobs (Starter, start line, mount line, assistant finish, penalty box…) as second positions without time clashes
+• books the meetings and briefings the rules require: Elite athletes’ briefing at 16:00 the day before the first competition day, Competition Jury meetings, start and finish rehearsals, drivers’ briefing, TOs’ meeting, daily TO briefing and de-briefing
+• keeps the Head Referee on duty through the protest time after each race
+• warns when starts are closer than the Event Organisers’ Manual allows
+• counts the radios you need
+
+Every format: super-sprint, sprint, standard, mixed relay, middle and long distance – on one day or across a weekend. Tick who works which race, set availability and preferred positions, lock your own choices and let the planner fill the rest. Every time allowance from the TO Checklist can be adjusted, and any duty window can be moved for one race.
+
+See the plan as a list, personal schedules, a Gantt chart per day and a timeline. Export to Excel, LibreOffice/Numbers, your calendar (.ics) or a picture, or share the plan file with colleagues – it also opens in the free Ubuntu and web versions.
+
+Private by design: no account, no tracking, no data collection. Your events stay on your device.
+
+Independent tool – not affiliated with, endorsed by or sponsored by World Triathlon.

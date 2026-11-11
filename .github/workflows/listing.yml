@@ -1,0 +1,35 @@
+name: Upload App Store listing
+# Puts the description, keywords, links, categories, review notes and the iPhone/iPad screenshots
+# on the App Store version page. It does NOT submit the app for review.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: App Store version to fill in (must match the uploaded build)
+        default: "1.0.0"
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      BUNDLE_ID: ${{ vars.BUNDLE_ID }}
+      APP_VERSION: ${{ inputs.version }}
+      FASTLANE_SKIP_UPDATE_CHECK: "1"
+      FASTLANE_HIDE_CHANGELOG: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Install fastlane
+        run: gem install fastlane -N
+      - name: Screenshots
+        run: |
+          mkdir -p apple/fastlane/screenshots/en-US
+          cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots/en-US/
+      - name: Upload the listing
+        run: cd apple && fastlane ios listing

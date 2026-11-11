@@ -51,6 +51,18 @@ platform :ios do
   end
 end
 
+platform :ios do
+  desc "Upload the App Store listing (text and screenshots) for this version – does not submit for review"
+  lane :listing do
+    upload_to_app_store(
+      api_key: asc_key, app_identifier: BUNDLE_ID, platform: "ios", app_version: VERSION,
+      skip_binary_upload: true, metadata_path: "fastlane/metadata", screenshots_path: "fastlane/screenshots",
+      overwrite_screenshots: true, submit_for_review: false, force: true,
+      run_precheck_before_submit: false, ignore_language_directory_validation: true
+    )
+  end
+end
+
 platform :mac do
   desc "Build the Mac app and upload it to TestFlight (needs the Mac Installer Distribution certificate too)"
   lane :beta do
