@@ -63,6 +63,20 @@ end
 def upload_listing(p)
   mac = p.to_s == "mac"
   shots = File.directory?("screenshots-#{p}") ? "screenshots-#{p}" : "fastlane/screenshots-#{p}"
+  # deliver stops when the version has no "App Review Information" yet – create it with the review notes first
+  asc_key
+  app0 = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  v0 = app0 && app0.get_edit_app_store_version(platform: store_platform(p))
+  if v0
+    notes_file = File.join(metadata_dir, "review_information", "notes.txt")
+    notes = File.exist?(notes_file) ? File.read(notes_file).strip : ""
+    begin
+      v0.fetch_app_store_review_detail
+    rescue => e
+      v0.create_app_store_review_detail(attributes: { notes: notes, demo_account_required: false })
+      UI.success("Created App Review Information with the review notes for #{p} version #{v0.version_string}")
+    end
+  end
   upload_to_app_store(
     api_key: asc_key, app_identifier: BUNDLE_ID, platform: mac ? "osx" : "ios", app_version: VERSION,
     skip_binary_upload: true, metadata_path: metadata_dir, screenshots_path: shots,
