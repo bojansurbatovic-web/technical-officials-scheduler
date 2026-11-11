@@ -43,7 +43,7 @@ platform :ios do
     profile = lane_context[SharedValues::SIGH_NAME]
     build_app(
       project: "TOScheduler.xcodeproj", scheme: "TOScheduler-iOS", configuration: "Release",
-      export_method: "app-store", xcargs: signing_args(profile),
+      export_method: "app-store-connect", xcargs: signing_args(profile),
       export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
       output_directory: "build", output_name: "TOScheduler.ipa"
     )
@@ -157,17 +157,26 @@ platform :mac do
   desc "Build the Mac app and upload it to TestFlight"
   lane :beta do
     key = asc_key
-    certs = [[ENV.fetch("DIST_CERT_PATH"), ENV.fetch("DIST_CERT_PASSWORD")]]
-    have_installer = !ENV["MAC_INSTALLER_CERT_PATH"].to_s.empty?
-    certs << [ENV["MAC_INSTALLER_CERT_PATH"], ENV["MAC_INSTALLER_PASSWORD"].to_s] if have_installer
-    prepare_keychain(certs)
+    prepare_keychain([[ENV.fetch("DIST_CERT_PATH"), ENV.fetch("DIST_CERT_PASSWORD")]])
+    unless ENV["MAC_INSTALLER_CERT_PATH"].to_s.empty?
+      begin
+        import_certificate(certificate_path: ENV["MAC_INSTALLER_CERT_PATH"], certificate_password: ENV["MAC_INSTALLER_PASSWORD"].to_s,
+                           keychain_name: KEYCHAIN, keychain_password: "")
+      rescue => e
+        UI.important("Stored installer certificate could not be imported: #{e.message}")
+      end
+    end
+    kc = File.expand_path("~/Library/Keychains/#{KEYCHAIN}-db")
+    found = sh("security find-identity -v -p basic '#{kc}' || true", log: false)
+    have_installer = found =~ /(Mac Installer Distribution|3rd Party Mac Developer Installer)/
+    UI.important("No usable installer certificate in the secrets – using a temporary one for this run") unless have_installer
     temp_id = have_installer ? nil : temp_installer_certificate
     begin
       get_provisioning_profile(api_key: key, app_identifier: BUNDLE_ID, team_id: TEAM_ID, platform: "macos")
       profile = lane_context[SharedValues::SIGH_NAME]
       build_app(
         project: "TOScheduler.xcodeproj", scheme: "TOScheduler-macOS", configuration: "Release",
-        export_method: "app-store", xcargs: signing_args(profile),
+        export_method: "app-store-connect", xcargs: signing_args(profile),
         export_options: { signingStyle: "manual", teamID: TEAM_ID, provisioningProfiles: { BUNDLE_ID => profile } },
         output_directory: "build", output_name: "TOScheduler.pkg"
       )
