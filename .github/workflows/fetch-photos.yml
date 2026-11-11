@@ -1,0 +1,48 @@
+name: Fetch site photos (one-off)
+# Downloads the Unsplash photos used on trisport.me and commits them to
+# site/assets/img/photos so the site serves its own copies.
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/fetch-photos.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download photos
+        run: |
+          set -u
+          dir=site/assets/img/photos
+          mkdir -p "$dir"
+          get() { # name, photo id, width
+            if curl -fsSL --retry 3 -o "$dir/$1.jpg" "https://images.unsplash.com/photo-$2?auto=format&fit=crop&fm=jpg&w=$3&q=78"; then
+              echo "ok   $1 $(stat -c %s "$dir/$1.jpg") bytes"
+            else
+              echo "FAIL $1 ($2)"; rm -f "$dir/$1.jpg"
+            fi
+          }
+          get hero-swim-start  1530549387789-4c1017266635 1400
+          get role-swim        1519315901367-f34ff9154487 900
+          get role-bike        1544197150-b99a580bb7a8    900
+          get role-transition  1486218119243-13883505764c 900
+          get role-finish      1452626038306-9aae5e071dd3 900
+          get app-rules        1517649763962-0c623266010b 1000
+          get app-manuals      1470509037663-253afd7f0f51 1000
+          get app-tricarbon    1542601906990-b4d3fb778b09 1000
+          get app-scheduler    1508962914676-134849a727f0 1000
+          get app-trianatomy   1517838277536-f5f99be501cd 1000
+          ls -la "$dir"
+      - name: Commit photos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/assets/img/photos
+          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
+          git commit -m "Add site photos from Unsplash"
+          git push
