@@ -88,6 +88,21 @@ def upload_listing(p)
   keep << app.primary_locale
   version = app.get_edit_app_store_version(platform: store_platform(p))
   return unless version
+  if mac
+    # deliver does not pick up Mac screenshots reliably – put them in the APP_DESKTOP set directly
+    loc = version.get_app_store_version_localizations.find { |l| l.locale == app.primary_locale }
+    dir = File.join(shots, app.primary_locale)
+    files = Dir.glob(File.join(dir, "*.png")).sort
+    if loc && !files.empty?
+      set = loc.get_app_screenshot_sets.find { |st| st.screenshot_display_type == "APP_DESKTOP" } ||
+            loc.create_app_screenshot_set(attributes: { screenshotDisplayType: "APP_DESKTOP" })
+      (set.app_screenshots || []).each { |old| old.delete! }
+      files.each do |f|
+        set.upload_screenshot(path: f, wait_for_processing: false)
+        UI.message("Uploaded Mac screenshot #{File.basename(f)}")
+      end
+    end
+  end
   version.get_app_store_version_localizations.each do |loc|
     next if keep.include?(loc.locale)
     begin
