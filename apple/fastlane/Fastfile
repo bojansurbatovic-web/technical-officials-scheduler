@@ -245,8 +245,19 @@ platform :mac do
     end
     sub = app.get_ready_review_submission(platform: Spaceship::ConnectAPI::Platform::MAC_OS) ||
           app.create_review_submission(platform: Spaceship::ConnectAPI::Platform::MAC_OS)
-    sub.add_app_store_version_to_review_items(app_store_version_id: mac_v.id)
-    sub.submit_for_review
+    mac_v.get_app_store_version_localizations.each do |l|
+      UI.message("LOC #{l.locale}: description=#{l.description.to_s.length} keywords=#{l.keywords.to_s.length} " \
+                 "support=#{l.support_url} marketing=#{l.marketing_url} promo=#{l.promotional_text.to_s.length}")
+    end
+    UI.message("VERSION copyright=#{mac_v.copyright.inspect} release_type=#{mac_v.release_type.inspect}")
+    begin
+      sub.add_app_store_version_to_review_items(app_store_version_id: mac_v.id)
+      sub.submit_for_review
+    rescue Spaceship::UnexpectedResponse => e
+      info = e.respond_to?(:error_info) ? e.error_info : nil
+      UI.error("App Store Connect says: #{(info || e.message).to_json}")
+      raise
+    end
     UI.success("Mac version #{mac_v.version_string} submitted for App Review")
   end
 end
