@@ -63,6 +63,27 @@ platform :ios do
   end
 end
 
+platform :ios do
+  desc "Print what App Store Connect has for this app: versions, languages, screenshots, builds"
+  lane :status do
+    asc_key
+    app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+    UI.user_error!("No app with bundle ID #{BUNDLE_ID} in App Store Connect") unless app
+    UI.message("APP #{app.name} id=#{app.id} primary_locale=#{app.primary_locale}")
+    app.get_app_store_versions.each do |v|
+      UI.message("VERSION #{v.platform} #{v.version_string} state=#{v.app_store_state}")
+      v.get_app_store_version_localizations.each do |loc|
+        sets = loc.get_app_screenshot_sets
+        info = sets.map { |st| "#{st.screenshot_display_type}=#{(st.app_screenshots || []).count}" }.join(", ")
+        UI.message("   LOCALE #{loc.locale}: #{info.empty? ? 'no screenshots' : info}")
+      end
+      build = v.build rescue nil
+      UI.message("   BUILD attached: #{build ? build.version : 'none'}")
+    end
+    app.get_builds.first(5).each { |b| UI.message("BUILD #{b.version} state=#{b.processing_state} expired=#{b.expired}") }
+  end
+end
+
 platform :mac do
   desc "Build the Mac app and upload it to TestFlight (needs the Mac Installer Distribution certificate too)"
   lane :beta do

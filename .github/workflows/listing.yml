@@ -7,6 +7,10 @@ on:
       version:
         description: App Store version to fill in (must match the uploaded build)
         default: "1.0.0"
+      only_status:
+        description: Only show what App Store Connect has (no upload)
+        type: boolean
+        default: false
 
 jobs:
   listing:
@@ -32,4 +36,7 @@ jobs:
           mkdir -p apple/fastlane/screenshots/en-US
           cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots/en-US/
       - name: Upload the listing
+        if: ${{ !inputs.only_status }}
         run: cd apple && fastlane ios listing
+      - name: What App Store Connect has now
+        run: cd apple && fastlane ios status
