@@ -60,6 +60,44 @@ platform :ios do
       overwrite_screenshots: true, submit_for_review: false, force: true,
       run_precheck_before_submit: false, ignore_language_directory_validation: true
     )
+    app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+    keep = Dir.children("fastlane/metadata").select { |d| File.directory?("fastlane/metadata/#{d}") && d != "review_information" }
+    keep << app.primary_locale
+    version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
+    if version
+      # languages that are not in fastlane/metadata (e.g. an earlier upload in the wrong language) are removed
+      version.get_app_store_version_localizations.each do |loc|
+        next if keep.include?(loc.locale)
+        begin
+          loc.delete!
+          UI.message("Removed language #{loc.locale} from version #{version.version_string}")
+        rescue => e
+          UI.important("Could not remove #{loc.locale}: #{e.message}")
+        end
+      end
+      # attach the newest processed build to this version
+      build = app.get_builds(sort: "-uploadedDate").find { |b| b.processing_state == "VALID" && !b.expired }
+      if build
+        begin
+          version.select_build(build_id: build.id)
+          UI.success("Build #{build.version} attached to version #{version.version_string}")
+        rescue => e
+          UI.important("Could not attach build #{build.version}: #{e.message}")
+        end
+      else
+        UI.important("No processed build yet – run this again once TestFlight shows the build")
+      end
+    end
+    begin
+      info = app.fetch_edit_app_info
+      (info ? info.get_app_info_localizations : []).each do |loc|
+        next if keep.include?(loc.locale)
+        loc.delete!
+        UI.message("Removed app-info language #{loc.locale}")
+      end
+    rescue => e
+      UI.important("App info languages unchanged: #{e.message}")
+    end
   end
 end
 

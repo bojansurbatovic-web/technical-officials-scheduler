@@ -33,8 +33,8 @@ jobs:
         run: gem install fastlane -N
       - name: Screenshots
         run: |
-          mkdir -p apple/fastlane/screenshots/en-US
-          cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots/en-US/
+          mkdir -p apple/fastlane/screenshots/en-GB
+          cp app-store/screenshots/iphone-6.9-*.png app-store/screenshots/ipad-13-*.png apple/fastlane/screenshots/en-GB/
       - name: Upload the listing
         if: ${{ !inputs.only_status }}
         run: cd apple && fastlane ios listing
