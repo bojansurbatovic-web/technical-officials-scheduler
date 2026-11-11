@@ -10,9 +10,9 @@ Copy these into App Store Connect → your app → the version page (iOS and mac
 | Secondary category | Productivity |
 | Age rating | 4+ (answer "None" to every question) |
 | Price | Free (or your choice) |
-| Support URL | https://bojansurbatovic-web.github.io/technical-officials-scheduler/support.html |
-| Marketing URL | https://bojansurbatovic-web.github.io/technical-officials-scheduler/ |
-| Privacy Policy URL | https://bojansurbatovic-web.github.io/technical-officials-scheduler/privacy.html |
+| Support URL | https://trisport.me/support.html |
+| Marketing URL | https://trisport.me/ |
+| Privacy Policy URL | https://trisport.me/privacy.html |
 | App Privacy | **Data Not Collected** |
 | Copyright | 2026 bojansurbatovic-web |
 | Export compliance | No encryption (already declared in the app: ITSAppUsesNonExemptEncryption = NO) |

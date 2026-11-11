@@ -32,11 +32,32 @@ After the push, open the repository → **Actions** and check:
 * **Tests and build check** – the planner tests, the screens, and an unsigned compile of the iPhone/iPad and Mac apps. If the Apple compile fails, open the run, download `xcode-build-logs`, and send me the lines with `error:`.
 * **Publish web version and privacy page** – if it fails at "configure-pages", go to **Settings → Pages**, set **Source: GitHub Actions**, then re-run the workflow.
 
+### Custom domain trisport.me
+
+The site is served at **https://trisport.me**. At the company where trisport.me is registered (its DNS settings), add:
+
+| Type | Name / host | Value |
+|---|---|---|
+| TXT | `_github-pages-challenge-bojansurbatovic-web` | the code GitHub shows on *your profile → Settings → Pages → Verified domains* |
+| A | `@` (trisport.me) | `185.199.108.153` |
+| A | `@` | `185.199.109.153` |
+| A | `@` | `185.199.110.153` |
+| A | `@` | `185.199.111.153` |
+| AAAA | `@` | `2606:50c0:8000::153` |
+| AAAA | `@` | `2606:50c0:8001::153` |
+| AAAA | `@` | `2606:50c0:8002::153` |
+| AAAA | `@` | `2606:50c0:8003::153` |
+| CNAME | `www` | `bojansurbatovic-web.github.io` |
+
+Remove any other A, AAAA or CNAME records for `@` and `www` (for example a parking page). Then:
+1. Profile → **Settings → Pages → Verified domains** → **Verify** (it can take up to 24 h for DNS to update; usually minutes).
+2. Repository → **Settings → Pages**: *Source* **GitHub Actions**, *Custom domain* `trisport.me` → **Save**. When the DNS check is green, tick **Enforce HTTPS**.
+
 When it is green, these pages are live (Apple needs the privacy and support URLs):
-* https://bojansurbatovic-web.github.io/technical-officials-scheduler/ – home page
-* https://bojansurbatovic-web.github.io/technical-officials-scheduler/app/ – the full app in the browser. On an iPhone or iPad, *Share → Add to Home Screen* gives you the app straight away, before the App Store release.
-* https://bojansurbatovic-web.github.io/technical-officials-scheduler/privacy.html
-* https://bojansurbatovic-web.github.io/technical-officials-scheduler/support.html
+* https://trisport.me/ – home page
+* https://trisport.me/app/ – the full app in the browser. On an iPhone or iPad, *Share → Add to Home Screen* gives you the app straight away, before the App Store release.
+* https://trisport.me/privacy.html
+* https://trisport.me/support.html
 
 ## 2. Register the app with Apple
 
