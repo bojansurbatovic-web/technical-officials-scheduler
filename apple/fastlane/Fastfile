@@ -231,11 +231,25 @@ def submit_version(p)
     end
     UI.message("Resubmitting the submission Apple sent back (#{sub.id})")
   else
-    sub = app.get_ready_review_submission(platform: store_platform(p)) || app.create_review_submission(platform: store_platform(p))
+    subs.select { |x| x.state == "READY_FOR_REVIEW" && (x.items || []).empty? }.each do |x|
+      begin
+        x.cancel_submission
+        UI.message("Cancelled empty review submission #{x.id}")
+      rescue => e
+        UI.important("Could not cancel empty submission #{x.id}: #{e.message.lines.first}")
+      end
+    end
+    sub = begin
+      app.create_review_submission(platform: store_platform(p))
+    rescue => e
+      UI.important("New review submission refused (#{e.message.lines.first.to_s.strip}) – using the open one")
+      app.get_ready_review_submission(platform: store_platform(p))
+    end
     begin
       sub.add_app_store_version_to_review_items(app_store_version_id: v.id)
+      UI.message("Added version #{v.version_string} to review submission #{sub.id}")
     rescue => e
-      UI.message("Version already in the review submission (#{e.message.lines.first.to_s.strip})")
+      UI.important("Adding the version: #{e.message}")
     end
   end
   begin
