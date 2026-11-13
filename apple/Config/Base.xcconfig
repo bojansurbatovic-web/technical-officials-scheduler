@@ -1,6 +1,6 @@
 // Shared settings. Put your own values in Config/Local.xcconfig (not committed) to build on your Mac,
 // e.g.  DEVELOPMENT_TEAM = ABCDE12345
-MARKETING_VERSION = 1.0.0
+MARKETING_VERSION = 1.0.1
 CURRENT_PROJECT_VERSION = 1
 PRODUCT_BUNDLE_IDENTIFIER = com.bojansurbatovic.toscheduler
 DEVELOPMENT_TEAM =

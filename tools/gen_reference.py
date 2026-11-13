@@ -16,6 +16,6 @@ with open(out, "w", encoding="utf-8") as f:
     f.write("var WTP = (typeof WTP !== 'undefined') ? WTP : {};\n")
     f.write("WTP.ref = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n")
     f.write("WTP.ref.APP_NAME = 'Technical Officials Scheduler';\nWTP.ref.APP_SHORT = 'TO Scheduler';\n")
-    f.write("WTP.ref.APP_VERSION = '1.0.0';\nWTP.ref.FILE_SUFFIX = '.wtplan.json';\n")
+    f.write("WTP.ref.APP_VERSION = '1.0.1';\nWTP.ref.FILE_SUFFIX = '.wtplan.json';\n")
     f.write("if (typeof module !== 'undefined') module.exports = WTP;\n")
 print("wrote", os.path.normpath(out))

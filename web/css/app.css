@@ -277,3 +277,6 @@ dialog.dlg h2 { margin: 0; padding: 16px 18px 6px; font-size: 19px; }
   .list-row { padding: 10px; }
 }
 @media print { .topbar, .sidebar, .tabbar, .subnav, .actions, .toast { display: none !important; } #app { display: block; height: auto; } .main { overflow: visible; } }
+.ath-row .ath-time { width: 108px; }
+@media (max-width: 420px) { .tabbar .tab span { font-size: 10px; } }
+@media (max-width: 600px) { .ath-row .ath-time { width: 84px; font-size: 12.5px; } }

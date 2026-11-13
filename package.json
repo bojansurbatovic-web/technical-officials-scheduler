@@ -5,7 +5,7 @@
   "description": "Plan Technical Official positions for triathlon events (World Triathlon Competition Rules).",
   "license": "MIT",
   "scripts": {
-    "test": "node tests/test_engine.js && node tests/test_exporters.js",
+    "test": "node tests/test_engine.js && node tests/test_exporters.js && node tests/test_athletes.js",
     "serve": "python3 -m http.server 8765 --directory web",
     "test:ui": "node tests/ui_smoke.js && node tests/native_bridge.js"
   },

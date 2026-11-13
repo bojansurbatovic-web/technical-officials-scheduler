@@ -5,7 +5,7 @@ const fs = require('fs');
 const URL_ = process.env.APP_URL || 'http://localhost:8765/index.html';
 const SHOTS = process.env.SHOTS || '/tmp/shots';
 fs.mkdirSync(SHOTS, { recursive: true });
-const sections = ['library', 'event', 'races', 'officials', 'participation', 'positions', 'duties', 'meetings', 'assignments', 'conflicts', 'schedules', 'gantt', 'timeline', 'export', 'references', 'about'];
+const sections = ['library', 'event', 'races', 'officials', 'participation', 'positions', 'duties', 'meetings', 'assignments', 'conflicts', 'schedules', 'gantt', 'timeline', 'athletes', 'export', 'references', 'about'];
 (async () => {
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
   const sizes = [['phone', { ...devices['iPhone 13'] }], ['tablet', { viewport: { width: 1024, height: 1366 }, deviceScaleFactor: 1 }], ['desktop', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }]];
@@ -25,7 +25,7 @@ const sections = ['library', 'event', 'races', 'officials', 'participation', 'po
       if (bad) { errors.push(s + ': ' + bad); }
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
       if (overflow) errors.push(s + ': page wider than the screen');
-      if (['library', 'races', 'officials', 'meetings', 'assignments', 'gantt', 'schedules'].includes(s))
+      if (['library', 'races', 'officials', 'meetings', 'assignments', 'gantt', 'schedules', 'athletes'].includes(s))
         await page.screenshot({ path: `${SHOTS}/${name}-${s}.png` });
     }
     // edits: rename an official, change a start time, lock a row, undo

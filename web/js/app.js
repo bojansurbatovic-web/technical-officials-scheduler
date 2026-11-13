@@ -19,6 +19,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       ['participation', 'Who works which race'], ['positions', 'Positions'], ['duties', 'Duty times & tweaks'], ['meetings', 'Meetings & briefings']] },
     { id: 'plan', label: 'Plan', icon: 'check', sections: [['assignments', 'Assignments'], ['conflicts', 'Conflicts']] },
     { id: 'views', label: 'Views', icon: 'chart', sections: [['schedules', 'Personal schedules'], ['gantt', 'Gantt'], ['timeline', 'Timeline']] },
+    { id: 'athletes', label: 'Athletes', icon: 'runner', sections: [['athletes', 'Athletes’ guide']] },
     { id: 'more', label: 'More', icon: 'more', sections: [['export', 'Export & share'], ['references', 'Rules & references'], ['about', 'About & privacy']] }
   ];
   var ICONS = {
@@ -26,6 +27,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     sliders: 'M4 6h10v2H4V6zm12-1h2v1h2v2h-2v1h-2V5zM4 16h4v2H4v-2zm6-1h2v1h8v2h-8v1h-2v-4zM4 11h8v2H4v-2zm10-1h2v4h-2v-1h0v-2z M18 11h2v2h-2z',
     check: 'M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z',
     chart: 'M3 5h8v3H3V5zm4 5.5h10v3H7v-3zM11 16h10v3H11v-3z',
+    runner: 'M13.5 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM10 7h4l2.6 4.6 3 .9-.6 1.9-3.8-1.1-1.2-2.1-1 3.3 2.5 2.5V22h-2v-4.2l-2.6-2.6-1.3 3.6L6 22l-1.5-1.3L7.7 17l1.8-6.1-2 1.5V15h-2v-3.6z',
     more: 'M6 10.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z',
     undo: 'M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62A7.95 7.95 0 0 1 12.5 10.5c3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z',
     redo: 'M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22l2.36.78A8 8 0 0 1 11.5 10.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z',
@@ -951,6 +953,54 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     root.appendChild(h('div', { class: 'grid-2 wide-left' }, card('Run sheet', list), card('Splits (leader)', splits)));
   };
 
+  // ============================================================ Athletes: guide
+  SECTIONS.athletes = function (root) {
+    var Ath = W.Athletes, races = E.racesSorted(A.ev);
+    if (A.athRace && !raceById(A.athRace)) A.athRace = '';
+    var info = Ath.info(A.ev);
+    function setInfo(k) {
+      return function (v) { edit(function () { A.ev.event.athletes = Object.assign(Ath.info(A.ev), A.ev.event.athletes || {}); A.ev.event.athletes[k] = v; }, { noPlan: true }); };
+    }
+    root.appendChild(header('Athletes’ guide', 'Only what athletes need: briefing, familiarisation and race-day times, the course and the key rules – no officials’ meetings or jobs. Share it as a page athletes can open on any phone, or as a calendar.',
+      [btn('Share guide', function () {
+        Store.exportFile(fileBase() + '-athletes-guide.html', 'text/html', Ath.html(A.ev, A.res, A.athRace)).then(exported);
+      }, 'primary'),
+      btn('Athletes’ calendar (.ics)', function () {
+        Store.exportFile(fileBase() + '-athletes.ics', 'text/calendar', Ath.ics(A.ev, A.res, A.athRace)).then(exported);
+      })]));
+    root.appendChild(h('div', { class: 'filters' },
+      field('Race', select('ath-race', [['', 'All races']].concat(races.map(function (r) { return [r.id, r.name + ' · ' + fmtT(A.res.timelines[r.id].start)]; })),
+        A.athRace || '', function (v) { A.athRace = v; render(); }))));
+    // schedule
+    var list = h('div', { class: 'list' }), day = '';
+    Ath.items(A.ev, A.res, A.athRace).forEach(function (it) {
+      if (it.date !== day) { day = it.date; list.appendChild(h('div', { class: 'list-day', text: longDate(day) })); }
+      list.appendChild(h('div', { class: 'list-row tl-row ath-row' + (it.kind === 'start' || it.kind === 'athletes_briefing' ? ' key' : '') },
+        h('span', { class: 'tl-time ath-time', text: (it.approx ? '≈ ' : '') + hm(it.s) + (it.e ? '–' + hm(it.e) : '') }),
+        h('i', { class: 'swatch', style: 'background:' + X.raceColour(A.ev, it.race_id) }),
+        h('div', { class: 'grow' }, h('strong', { text: it.title }), it.text ? h('div', { class: 'muted small', text: it.text }) : null)));
+    });
+    if (!list.children.length) list.appendChild(empty('No athlete events for this selection.'));
+    // course
+    var courses = h('div', { class: 'stack' }, (A.athRace ? races.filter(function (r) { return r.id === A.athRace; }) : races).map(function (r) {
+      return h('div', null, h('div', { class: 'race-line' }, h('i', { class: 'swatch', style: 'background:' + X.raceColour(A.ev, r.id) }),
+        h('strong', { text: r.name + ' · start ' + fmtT(A.res.timelines[r.id].start) })),
+      h('table', { class: 'tbl compact' }, h('tbody', null, Ath.course(A.ev, r).map(function (c) {
+        return h('tr', null, h('td', { class: 'muted', text: c[0] }), h('td', { text: c[1] }));
+      }))));
+    }));
+    var rules = h('ul', { class: 'bullets' }, Ath.rules(A.ev, A.athRace).map(function (x) { return h('li', { text: x }); }));
+    var infoCard = card('Information for athletes', h('div', { class: 'form-grid' },
+      field('Briefing location', input('ath-brief', info.briefing_location, setInfo('briefing_location'), { placeholder: 'e.g. Hotel ballroom, 1st floor' })),
+      field('Race office / packet pick-up', input('ath-office', info.office, setInfo('office'), { placeholder: 'e.g. Race office at the expo, 09:00–18:00' })),
+      field('Notes for athletes', h('textarea', { 'data-k': 'ath-notes', rows: 4, placeholder: 'Parking, shuttle, bag drop, contact…',
+        on: { change: function (ev) { setInfo('notes')(ev.target.value); } } }, info.notes), 'Shown at the top of the shared guide', 'span2')));
+    root.appendChild(h('div', { class: 'grid-2 wide-left' },
+      h('div', { class: 'stack' }, card('Schedule', list), infoCard),
+      h('div', { class: 'stack' }, card('Course', courses), card('Key rules', rules),
+        note('Times marked ≈ are estimates from typical race times. The athletes’ briefing and official race information prevail.', 'small'))));
+  };
+
   // ============================================================ More: export
   function fileBase() {
     return (A.ev.event.name || 'event').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'event';
@@ -969,6 +1019,8 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         function () { Store.exportFile(fileBase() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', X.xlsx(A.ev, A.res)).then(exported); }),
       item('LibreOffice / Numbers (.ods)', 'The same sheets in OpenDocument format.',
         function () { Store.exportFile(fileBase() + '.ods', 'application/vnd.oasis.opendocument.spreadsheet', X.ods(A.ev, A.res)).then(exported); }),
+      item('Athletes’ guide (.html)', 'Schedule, course and key rules for athletes only – opens on any phone or computer and prints well.',
+        function () { Store.exportFile(fileBase() + '-athletes-guide.html', 'text/html', W.Athletes.html(A.ev, A.res, '')).then(exported); }),
       item('Calendar (.ics)', 'Races, every meeting and briefing, and each official’s duties – for Apple Calendar, Google Calendar or Outlook.',
         function () { Store.exportFile(fileBase() + '.ics', 'text/calendar', X.ics(A.ev, A.res)).then(exported); }),
       item('Gantt picture (.svg)', 'The Gantt of the day chosen on the Gantt page (' + longDate(A.gantt.day || E.raceDates(A.ev)[0]) + ').', exportSvg),

@@ -1,6 +1,6 @@
 /* Offline cache for the web version. Bump VERSION when files change. */
-var VERSION = 'tos-1.0.0';
-var FILES = ['./', 'index.html', 'css/app.css', 'js/reference.js', 'js/engine.js', 'js/exporters.js', 'js/examples.js',
+var VERSION = 'tos-1.0.1';
+var FILES = ['./', 'index.html', 'css/app.css', 'js/reference.js', 'js/engine.js', 'js/exporters.js', 'js/athletes.js', 'js/examples.js',
   'js/storage.js', 'js/app.js', 'js/boot.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES); })); self.skipWaiting(); });
 self.addEventListener('activate', function (e) {
