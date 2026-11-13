@@ -97,12 +97,16 @@ def upload_listing(p)
       UI.success("Attached #{File.basename(att)} to App Review Information (#{p})")
     end
   end
+  # deliver (slow: ~20 min in fastlane 2.241) is only needed for app-level info – name, subtitle, categories,
+  # privacy URL – or to create a new version; text, screenshots and build are set directly below.
+  if ENV["FULL_DELIVER"] == "1" || !Spaceship::ConnectAPI::App.find(BUNDLE_ID).get_app_store_versions.any? { |x| x.platform == store_platform(p) && x.version_string == VERSION }
   upload_to_app_store(
     api_key: asc_key, app_identifier: BUNDLE_ID, platform: mac ? "osx" : "ios", app_version: VERSION,
     skip_binary_upload: true, metadata_path: metadata_dir, screenshots_path: shots,
     skip_screenshots: true, submit_for_review: false, force: true,
     run_precheck_before_submit: false, ignore_language_directory_validation: true
   )
+  end
   app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
   keep = Dir.children(metadata_dir).select { |d| File.directory?(File.join(metadata_dir, d)) && d != "review_information" }
   keep << app.primary_locale
