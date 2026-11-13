@@ -7,7 +7,7 @@ const sets = [
   ['ipad-13', { width: 1032, height: 1376 }, 2, true],
   ['mac', { width: 1440, height: 900 }, 2, false],
 ];
-const shots = [['1-assignments', 'assignments'], ['2-gantt', 'gantt'], ['3-meetings', 'meetings'], ['4-races', 'races'], ['5-schedules', 'schedules'], ['6-calendar', 'library']];
+const shots = [['1-assignments', 'assignments'], ['2-gantt', 'gantt'], ['3-meetings', 'meetings'], ['4-races', 'races'], ['5-schedules', 'schedules'], ['6-calendar', 'library'], ['7-athletes', 'athletes']];
 (async () => {
   const b = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
   for (const [name, viewport, scale, touch] of sets) {
