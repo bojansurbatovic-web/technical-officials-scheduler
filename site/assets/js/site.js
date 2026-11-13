@@ -11,7 +11,7 @@ var APP_LINKS = {
   tricarbon:  { name: "TriCarbon",                    appStore: "https://apps.apple.com/us/app/tricarbon-race-carbon-tracker/id6826201612" },
   trianatomy: { name: "TriAnatomy",                   appStore: "https://apps.apple.com/us/app/trianatomy/id6829890027" },
   triofficial:{ name: "TriOfficial",                  appStore: "https://apps.apple.com/us/app/triofficial-race-officials/id6823983576" },
-  scheduler:  { name: "Technical Officials Scheduler", appStore: "" }
+  scheduler:  { name: "Technical Officials Scheduler", appStore: "https://apps.apple.com/us/app/technical-officials-scheduler/id6833498873" }
 };
 
 (function () {
