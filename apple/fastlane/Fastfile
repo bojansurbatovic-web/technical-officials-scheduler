@@ -60,6 +60,15 @@ def metadata_dir
   File.directory?("metadata") ? "metadata" : "fastlane/metadata"   # lane code runs inside fastlane/
 end
 
+def display_type(path)
+  w, h = File.binread(path, 24)[16, 8].unpack("NN")
+  case [w, h]
+  when [1320, 2868], [1290, 2796] then "APP_IPHONE_67"
+  when [2064, 2752], [2048, 2732] then "APP_IPAD_PRO_3GEN_129"
+  when [2880, 1800], [2560, 1600], [1440, 900], [1280, 800] then "APP_DESKTOP"
+  end
+end
+
 def upload_listing(p)
   mac = p.to_s == "mac"
   shots = File.directory?("screenshots-#{p}") ? "screenshots-#{p}" : "fastlane/screenshots-#{p}"
@@ -91,7 +100,7 @@ def upload_listing(p)
   upload_to_app_store(
     api_key: asc_key, app_identifier: BUNDLE_ID, platform: mac ? "osx" : "ios", app_version: VERSION,
     skip_binary_upload: true, metadata_path: metadata_dir, screenshots_path: shots,
-    overwrite_screenshots: true, submit_for_review: false, force: true,
+    skip_screenshots: true, submit_for_review: false, force: true,
     run_precheck_before_submit: false, ignore_language_directory_validation: true
   )
   app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
@@ -111,18 +120,19 @@ def upload_listing(p)
     end
     copyright_file = File.join(metadata_dir, "copyright.txt")
     version.update(attributes: { copyright: File.read(copyright_file).strip }) if File.exist?(copyright_file)
-    # deliver does not pick up Mac screenshots reliably – put them in the APP_DESKTOP set directly
-    loc = version.get_app_store_version_localizations.find { |l| l.locale == app.primary_locale }
-    dir = File.join(shots, app.primary_locale)
-    files = Dir.glob(File.join(dir, "*.png")).sort
-    if loc && !files.empty?
-      set = loc.get_app_screenshot_sets.find { |st| st.screenshot_display_type == "APP_DESKTOP" } ||
-            loc.create_app_screenshot_set(attributes: { screenshotDisplayType: "APP_DESKTOP" })
-      (set.app_screenshots || []).each { |old| old.delete! }
-      files.each do |f|
-        set.upload_screenshot(path: f, wait_for_processing: false)
-        UI.message("Uploaded Mac screenshot #{File.basename(f)}")
-      end
+  end
+  # screenshots: put them in the right display-type set directly (fastlane 2.241 no longer finds them)
+  loc = version.get_app_store_version_localizations.find { |l| l.locale == app.primary_locale }
+  files = Dir.glob(File.join(shots, app.primary_locale, "*.png")).sort
+  if loc && !files.empty?
+    sets = loc.get_app_screenshot_sets
+    files.group_by { |f| display_type(f) }.each do |type, fs|
+      next unless type
+      set = sets.find { |st| st.screenshot_display_type == type } ||
+            loc.create_app_screenshot_set(attributes: { screenshotDisplayType: type })
+      (set.app_screenshots || []).each { |old| (old.delete! rescue nil) }
+      fs.each { |f| set.upload_screenshot(path: f, wait_for_processing: false) }
+      UI.message("Uploaded #{fs.size} screenshots to #{type}")
     end
   end
   version.get_app_store_version_localizations.each do |loc|
