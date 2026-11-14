@@ -426,3 +426,4 @@ td.time { font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 1020px) { .story, .two-col { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
 @media (max-width: 560px) { .gallery figure { width: 200px; } }
 .who-head .avatar { font-size: 20px; color: #07101f; }
+.who > dl > dt:first-child { margin-top: 0; }
