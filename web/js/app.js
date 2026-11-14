@@ -20,7 +20,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     { id: 'plan', label: 'Plan', icon: 'check', sections: [['assignments', 'Assignments'], ['conflicts', 'Conflicts']] },
     { id: 'views', label: 'Views', icon: 'chart', sections: [['schedules', 'Personal schedules'], ['gantt', 'Gantt'], ['timeline', 'Timeline']] },
     { id: 'athletes', label: 'Athletes', icon: 'runner', sections: [['athletes', 'Athletes’ guide']] },
-    { id: 'more', label: 'More', icon: 'more', sections: [['export', 'Export & share'], ['references', 'Rules & references'], ['about', 'About & privacy']] }
+    { id: 'more', label: 'More', icon: 'more', sections: [['export', 'Export & share'], ['trisport', 'TriSport.me'], ['references', 'Rules & references'], ['about', 'About & privacy']] }
   ];
   var ICONS = {
     calendar: 'M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 8h14v10H5V10z',
@@ -1060,6 +1060,21 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       h('li', { text: 'Duty windows per position follow the World Triathlon TO Checklist 2025 (pre-event, event, post-event duties).' }));
     root.appendChild(h('div', { class: 'stack' }, card('Obligations of the appointed officials', tbl), card('Other rules used', rules),
       card('Sources', h('pre', { class: 'refs', text: ref.REFERENCES }))));
+  };
+  SECTIONS.trisport = function (root) {
+    function link(label, url, cls) { return btn(label, function () { Store.openLink(url); }, cls); }
+    root.appendChild(header('TriSport.me', 'The home of Technical Officials Scheduler and its sister apps for triathlon officials, event organisers and athletes.',
+      [link('Open www.trisport.me', 'https://www.trisport.me/', 'primary')]));
+    root.appendChild(h('div', { class: 'grid-2' },
+      card('What you find there', h('ul', { class: 'bullets' },
+        h('li', { text: 'News and help for this app, and the web version that runs in any browser.' }),
+        h('li', { text: 'The other TriSport.me apps for officials, organisers and athletes.' }),
+        h('li', { text: 'The privacy policy and support page.' }))),
+      card('Links', h('div', { class: 'stack' },
+        link('Home page – www.trisport.me', 'https://www.trisport.me/'),
+        link('Support', 'https://www.trisport.me/support.html'),
+        link('Privacy policy', 'https://www.trisport.me/privacy.html'),
+        note('The links open in your browser. The app itself works offline and sends nothing over the internet.', 'small')))));
   };
   SECTIONS.about = function (root) {
     root.appendChild(header(ref.APP_NAME, 'Version ' + ref.APP_VERSION));

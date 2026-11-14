@@ -5,7 +5,7 @@ const fs = require('fs');
 const URL_ = process.env.APP_URL || 'http://localhost:8765/index.html';
 const SHOTS = process.env.SHOTS || '/tmp/shots';
 fs.mkdirSync(SHOTS, { recursive: true });
-const sections = ['library', 'event', 'races', 'officials', 'participation', 'positions', 'duties', 'meetings', 'assignments', 'conflicts', 'schedules', 'gantt', 'timeline', 'athletes', 'export', 'references', 'about'];
+const sections = ['library', 'event', 'races', 'officials', 'participation', 'positions', 'duties', 'meetings', 'assignments', 'conflicts', 'schedules', 'gantt', 'timeline', 'athletes', 'export', 'trisport', 'references', 'about'];
 (async () => {
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
   const sizes = [['phone', { ...devices['iPhone 13'] }], ['tablet', { viewport: { width: 1024, height: 1366 }, deviceScaleFactor: 1 }], ['desktop', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }]];

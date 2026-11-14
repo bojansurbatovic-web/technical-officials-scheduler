@@ -13,6 +13,7 @@ gi.require_version("Gdk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
+from . import athletes as ATH  # noqa: E402
 from . import engine as E  # noqa: E402
 from . import exporters as X  # noqa: E402
 from . import reference as ref  # noqa: E402
@@ -270,6 +271,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._tab_personal()
         self._tab_gantt()
         self._tab_timeline()
+        self._tab_athletes()
         self._tab_conflicts()
         self._tab_references()
         self.nb.connect("switch-page", self._on_switch_page)
@@ -317,6 +319,8 @@ class MainWindow(Gtk.ApplicationWindow):
             "export_ods": (lambda *a: self.on_export("ods"), []),
             "export_json": (lambda *a: self.on_export("json"), []),
             "export_ics": (lambda *a: self.on_export("ics"), []),
+            "export_athletes": (lambda *a: self.on_export_athletes("html"), []),
+            "trisport": (lambda *a: self._open_uri("https://www.trisport.me/"), []),
             "export_svg": (lambda *a: self.on_export("svg"), []),
             "share": (self.on_share, []), "copy_json": (self.on_copy_json, []),
             "open_library": (self.on_open_library, []), "undo": (self.on_undo, ["<Primary>z"]),
@@ -376,6 +380,7 @@ class MainWindow(Gtk.ApplicationWindow):
         sec2.append("Export table to LibreOffice (.ods)…", "win.export_ods")
         sec2.append("Export Gantt (.svg)…", "win.export_svg")
         sec2.append("Export calendar (.ics)…", "win.export_ics")
+        sec2.append("Export athletes’ guide (.html)…", "win.export_athletes")
         sec2.append("Export event as JSON…", "win.export_json")
         menu.append_section("Export", sec2)
         sec3 = Gio.Menu()
@@ -390,6 +395,7 @@ class MainWindow(Gtk.ApplicationWindow):
         sec5 = Gio.Menu()
         sec5.append("Example: two races back to back (Q3)", "win.example_q3")
         sec5.append("Example: two-day weekend, 3 races", "win.example_multi")
+        sec5.append("TriSport.me – website, help and other apps", "win.trisport")
         sec5.append("References & about", "win.about")
         menu.append_section(None, sec5)
         mb = Gtk.MenuButton()
@@ -1572,6 +1578,140 @@ class MainWindow(Gtk.ApplicationWindow):
         box.pack_start(scrolled(st, 110), False, False, 0)
         self.nb.append_page(page(box), Gtk.Label(label="Timeline"))
 
+    # ------------------------------------------------------------------ tab: athletes' guide
+    def _tab_athletes(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.set_border_width(10)
+        box.pack_start(label("Athletes’ guide – only what athletes need: briefing, familiarisation and race-day times, the course "
+                             "and the key rules. No officials’ meetings or jobs. Save it as a page athletes can open on any phone "
+                             "or print, or as a calendar.", wrap=True), False, False, 0)
+        self.ath_race = Gtk.ComboBoxText()
+        self.ath_race.connect("changed", lambda w: (not self._ath_filling) and self._fill_athletes())
+        self._ath_filling = False
+        b1 = Gtk.Button(label="Save athletes’ guide (.html)…")
+        b1.connect("clicked", lambda w: self.on_export_athletes("html"))
+        b2 = Gtk.Button(label="Save athletes’ calendar (.ics)…")
+        b2.connect("clicked", lambda w: self.on_export_athletes("ics"))
+        box.pack_start(flow(field("Race", self.ath_race), b1, b2), False, False, 0)
+        self.ath_brief = Gtk.Entry()
+        self.ath_brief.set_placeholder_text("e.g. Hotel ballroom, 1st floor")
+        self.ath_brief.set_width_chars(34)
+        self.ath_office = Gtk.Entry()
+        self.ath_office.set_placeholder_text("e.g. Race office at the expo, 09:00–18:00")
+        self.ath_office.set_width_chars(34)
+        for w, key in ((self.ath_brief, "briefing_location"), (self.ath_office, "office")):
+            w.connect("activate", lambda e, k=key: self._ath_set(k, e.get_text()))
+            w.connect("focus-out-event", lambda e, ev, k=key: self._ath_set(k, e.get_text()) or False)
+        self.ath_notes = Gtk.TextView()
+        self.ath_notes.set_wrap_mode(Gtk.WrapMode.WORD)
+        self.ath_notes.set_size_request(-1, 60)
+        self.ath_notes.connect("focus-out-event", lambda w, ev: self._ath_set("notes", self._tv_text(w)) or False)
+        nsw = scrolled(self.ath_notes, 60)
+        nsw.set_vexpand(False)
+        box.pack_start(flow(field("Briefing location", self.ath_brief), field("Race office / packet pick-up", self.ath_office)),
+                       False, False, 0)
+        box.pack_start(label("Notes for athletes (shown at the top of the saved guide)", dim=True), False, False, 0)
+        box.pack_start(nsw, False, False, 0)
+        pan = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        # time, item, details, weight, bg
+        self.ath_store = Gtk.ListStore(str, str, str, int, str)
+        tree = Gtk.TreeView(model=self.ath_store)
+        text_column(tree, "Time", 0, width=110, weight_idx=3, bg_idx=4)
+        text_column(tree, "Schedule", 1, width=280, weight_idx=3, bg_idx=4)
+        text_column(tree, "What to do", 2, width=320, expand=True, bg_idx=4)
+        pan.pack1(scrolled(tree, 320), True, True)
+        self.ath_text = Gtk.TextView()
+        self.ath_text.set_editable(False)
+        self.ath_text.set_wrap_mode(Gtk.WrapMode.WORD)
+        self.ath_text.set_left_margin(10)
+        self.ath_text.set_top_margin(8)
+        buf = self.ath_text.get_buffer()
+        buf.create_tag("h", weight=700, scale=1.15)
+        buf.create_tag("b", weight=700)
+        pan.pack2(scrolled(self.ath_text, 320), True, True)
+        box.pack_start(pan, True, True, 0)
+        box.pack_start(label("Times marked ≈ are estimates from typical race times. The athletes’ briefing and official race "
+                             "information prevail.", dim=True), False, False, 0)
+        self.nb.append_page(page(box), Gtk.Label(label="Athletes’ guide"))
+
+    @staticmethod
+    def _tv_text(tv):
+        b = tv.get_buffer()
+        return b.get_text(b.get_start_iter(), b.get_end_iter(), False)
+
+    def _ath_set(self, key, value):
+        cur = ATH.info(self.ev)
+        if cur.get(key, "") == value:
+            return
+        def apply():
+            a = dict(ATH.info(self.ev))
+            a[key] = value
+            self.ev["event"]["athletes"] = a
+        self.edit(apply, replan=False, coalesce="ath-" + key)
+
+    def _fill_athletes(self):
+        if not self.result:
+            return
+        races = E.races_sorted(self.ev)
+        want = [("", "All races")] + [(r["id"], r["name"]) for r in races]
+        cur = self.ath_race.get_active_id() or ""
+        have = [(row[1], row[0]) for row in self.ath_race.get_model()] if self.ath_race.get_model() else []
+        if have != want:
+            self._ath_filling = True
+            self.ath_race.remove_all()
+            for rid, name in want:
+                self.ath_race.append(rid, name)
+            self.ath_race.set_active_id(cur if any(rid == cur for rid, _ in want) else "")
+            self._ath_filling = False
+        race_id = self.ath_race.get_active_id() or ""
+        inf = ATH.info(self.ev)
+        if not self.ath_brief.has_focus():
+            self.ath_brief.set_text(inf["briefing_location"])
+        if not self.ath_office.has_focus():
+            self.ath_office.set_text(inf["office"])
+        if not self.ath_notes.has_focus() and self._tv_text(self.ath_notes) != inf["notes"]:
+            self.ath_notes.get_buffer().set_text(inf["notes"])
+        self.ath_store.clear()
+        day = None
+        for it in ATH.items(self.ev, self.result, race_id):
+            if it["date"] != day:
+                day = it["date"]
+                self.ath_store.append(["", ATH.long_date(day).upper(), "", 700, "#E8ECF2"])
+            key = it["kind"] in ("start", "athletes_briefing")
+            self.ath_store.append([ATH.time_text(it), it["title"], it["text"], 700 if key else 400, "#EEF4FD" if key else "#FFFFFF"])
+        buf = self.ath_text.get_buffer()
+        buf.set_text("")
+        it_ = buf.get_end_iter()
+        buf.insert_with_tags_by_name(it_, "Course\n", "h")
+        for r in [r for r in races if not race_id or r["id"] == race_id]:
+            buf.insert_with_tags_by_name(buf.get_end_iter(), f"{r['name']} – start {self.result['fmt'](self.result['timelines'][r['id']]['start'])}\n", "b")
+            for a, b in ATH.course(self.ev, r):
+                buf.insert(buf.get_end_iter(), f"   {a}: {b}\n")
+        buf.insert_with_tags_by_name(buf.get_end_iter(), "\nKey rules\n", "h")
+        for x in ATH.rules(self.ev, race_id):
+            buf.insert(buf.get_end_iter(), f"• {x}\n")
+
+    def on_export_athletes(self, kind):
+        race_id = self.ath_race.get_active_id() or ""
+        ext = ".html" if kind == "html" else ".ics"
+        pats = ("Web page", "*.html") if kind == "html" else ("iCalendar", "*.ics")
+        folder = os.path.dirname(self.path) if self.path else GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+        p = self._file_dialog("Save athletes’ guide", Gtk.FileChooserAction.SAVE,
+                              self._default_name("_athletes" + ext), folder, patterns=(pats,))
+        if not p:
+            return
+        if not p.endswith(ext):
+            p += ext
+        res = self.result or E.evaluate(self.ev)
+        try:
+            text = ATH.guide_html(self.ev, res, race_id) if kind == "html" else ATH.guide_ics(self.ev, res, race_id)
+            with open(p, "w", encoding="utf-8", newline="") as f:
+                f.write(text)
+        except OSError as err:
+            self.info("Could not save", str(err), Gtk.MessageType.ERROR)
+            return
+        self.toast(f"Saved {os.path.basename(p)}", open_path=p)
+
     # ------------------------------------------------------------------ tab: conflicts
     def _tab_conflicts(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -1683,6 +1823,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._fill_assignments()
         self._fill_personal()
         self._fill_timeline()
+        self._fill_athletes()
         self._fill_conflicts()
         self._update_race_summary()
         if self.nb.get_current_page() == self._gantt_page:
@@ -2094,6 +2235,12 @@ class MainWindow(Gtk.ApplicationWindow):
             except GLib.Error as err:
                 self.info("Could not start the application", err.message, Gtk.MessageType.ERROR)
 
+    def _open_uri(self, uri):
+        try:
+            Gtk.show_uri_on_window(self, uri, Gdk.CURRENT_TIME)
+        except GLib.Error as err:
+            self.info("Could not open the browser", err.message, Gtk.MessageType.ERROR)
+
     def on_copy_json(self, *a):
         Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).set_text(X.to_json(self.ev), -1)
         self.toast("Event JSON copied to the clipboard")
@@ -2110,6 +2257,8 @@ class MainWindow(Gtk.ApplicationWindow):
         d.set_comments("Plans Technical Official assignments for World Triathlon races: primary and secondary positions, "
                        "time clashes, Gantt chart, race timeline and radio count.\n\n" + ref.REFERENCES)
         d.set_license_type(Gtk.License.MIT_X11)
+        d.set_website("https://www.trisport.me/")
+        d.set_website_label("www.trisport.me")
         d.run()
         d.destroy()
 

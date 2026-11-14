@@ -1,0 +1,4 @@
+#!/bin/sh
+# Starts the GTK app inside the snap (python3 and PyGObject come from the snap, GTK from the GNOME extension).
+export PYTHONPATH="$SNAP/app:$SNAP/usr/lib/python3/dist-packages${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m wt_planner "$@"

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Technical Officials Scheduler
+GenericName=TO Scheduler
+Comment=Plan Technical Officials, meetings and the athletes' guide for triathlon races
+Exec=technical-officials-scheduler %f
+Icon=${SNAP}/meta/gui/technical-officials-scheduler.png
+Terminal=false
+Categories=Office;ProjectManagement;Sports;
+Keywords=triathlon;technical official;referee;schedule;roster;gantt;athletes;briefing;
+StartupNotify=true

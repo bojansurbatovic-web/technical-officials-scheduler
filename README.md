@@ -6,7 +6,7 @@ Plans the **Technical Officials (TOs)** of triathlon events run under the World 
 |---|---|
 | iPhone, iPad, Mac | App Store (see [PUBLISHING.md](PUBLISHING.md)) – native SwiftUI shell in [`apple/`](apple) |
 | Web | https://trisport.me/app/ – works offline, can be added to the home screen |
-| Ubuntu desktop (GTK) | [`linux/`](linux) – `./build-deb.sh` and then `sudo apt install ./dist/wt-planner_*.deb` |
+| Ubuntu desktop (GTK) | Snap Store: `sudo snap install technical-officials-scheduler` (see PUBLISHING.md) · or from [`linux/`](linux): `./build-deb.sh` and `sudo apt install ./dist/wt-planner_*.deb` |
 
 All versions read and write the same `.wtplan.json` plan files.
 

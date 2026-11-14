@@ -1,0 +1,43 @@
+name: Snap (Ubuntu)
+# Builds the Ubuntu desktop app as a snap. With the secret SNAPCRAFT_STORE_CREDENTIALS it is also
+# uploaded to the Snap Store (snapcraft.io/technical-officials-scheduler) – see PUBLISHING.md.
+on:
+  push:
+    branches: [main]
+    paths: ["linux/**", "snap/**", ".github/workflows/snap.yml"]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Snap Store channel to release to
+        type: choice
+        options: [edge, beta, candidate, stable]
+        default: stable
+
+jobs:
+  snap:
+    runs-on: ubuntu-latest
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests of the Ubuntu app
+        run: |
+          cd linux
+          python3 tests/test_engine.py
+          python3 tests/test_athletes.py
+          python3 tests/test_gui_smoke.py
+      - uses: snapcore/action-build@v1
+        id: build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap
+          path: ${{ steps.build.outputs.snap }}
+      - name: Publish to the Snap Store
+        if: env.SNAPCRAFT_STORE_CREDENTIALS != ''
+        uses: snapcore/action-publish@v1
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: ${{ inputs.channel || 'edge' }}
+      - name: Not published
+        if: env.SNAPCRAFT_STORE_CREDENTIALS == ''
+        run: echo "::notice::Snap built (see the 'snap' artifact). Add the SNAPCRAFT_STORE_CREDENTIALS secret to publish it – PUBLISHING.md, Snap Store."

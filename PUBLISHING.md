@@ -168,3 +168,31 @@ Apple's review usually takes 1–3 days. You will get an e-mail; after approval 
 brew install xcodegen && cd apple && xcodegen generate && open TOScheduler.xcodeproj
 ```
 Choose your team under *Signing & Capabilities* for both targets, then *Product → Archive → Distribute App → App Store Connect*.
+
+---
+
+## Snap Store (Ubuntu)
+
+The Ubuntu desktop app (`linux/`) is packaged as a snap (`snap/snapcraft.yaml`). The workflow **Snap (Ubuntu)** builds it on every change to `linux/` or `snap/`, and you can also start it from the Actions tab and choose a channel. Every run leaves the built `.snap` as a download (artifact `snap`). It is uploaded to the Snap Store only once the secret below exists.
+
+One-time setup on your Ubuntu computer, signed in with the same Ubuntu One account as TriCarbon:
+
+```bash
+sudo snap install snapcraft --classic
+snapcraft login
+snapcraft register technical-officials-scheduler
+snapcraft export-login --snaps=technical-officials-scheduler \
+  --acls package_access,package_push,package_update,package_release snap-credentials.txt
+gh secret set SNAPCRAFT_STORE_CREDENTIALS -R bojansurbatovic-web/technical-officials-scheduler < snap-credentials.txt
+rm snap-credentials.txt
+```
+
+You can also register the name at https://snapcraft.io/register-snap, and paste the file's contents as the secret under *Settings → Secrets and variables → Actions*.
+
+Then run **Actions → Snap (Ubuntu) → Run workflow** with the channel `stable`. On snapcraft.io → *My snaps → technical-officials-scheduler → Listing*, add screenshots (`app-store/screenshots/mac-*.png` work well), the category *Productivity* and the website https://www.trisport.me. After that, anyone can install it:
+
+```bash
+sudo snap install technical-officials-scheduler
+```
+
+Pushes to `main` that change `linux/` or `snap/` go to the `edge` channel. Use *Run workflow* with `stable` to release.

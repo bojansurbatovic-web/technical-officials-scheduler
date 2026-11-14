@@ -1,0 +1,65 @@
+name: technical-officials-scheduler
+title: Technical Officials Scheduler
+base: core24
+version: '1.4.0'
+summary: Plan Technical Officials, meetings and athletes' guides for triathlon
+description: |
+  Technical Officials Scheduler plans the Technical Officials (referees) of
+  triathlon races run under the World Triathlon Competition Rules.
+
+  Enter your races and your team, and the planner gives every official a main
+  position, adds the short jobs (Starter, start line, mount line, assistant
+  finish, penalty box...) without time clashes, and books the meetings and
+  briefings the rules require: the Elite athletes' briefing at 16:00 the day
+  before, Competition Jury meetings, rehearsals, the TOs' meeting and the
+  daily TO briefings.
+
+  * Every format: super-sprint, sprint, standard, mixed relay, middle and long
+    distance, on one day or across a weekend
+  * Who works which race, availability, preferred positions, locked choices
+  * Personal schedules, a Gantt chart per day, a race timeline and radio count
+  * Athletes' guide: only what athletes need – briefing, familiarisation and
+    race-day times, course and key rules – saved as a page or calendar
+  * Export to Excel, LibreOffice, iCalendar and SVG; plan files open on
+    iPhone, iPad, Mac and the web version too
+
+  No account, no tracking: your events stay on your computer.
+  Independent tool – not affiliated with World Triathlon. More at
+  https://www.trisport.me
+grade: stable
+confinement: strict
+license: MIT
+icon: snap/gui/technical-officials-scheduler.png
+website: https://www.trisport.me/
+contact: https://github.com/bojansurbatovic-web/technical-officials-scheduler/issues
+issues: https://github.com/bojansurbatovic-web/technical-officials-scheduler/issues
+source-code: https://github.com/bojansurbatovic-web/technical-officials-scheduler
+
+apps:
+  technical-officials-scheduler:
+    command: bin/launch
+    extensions: [gnome]
+    plugs:
+      - home
+      - removable-media
+
+parts:
+  scheduler:
+    plugin: dump
+    source: linux
+    organize:
+      wt_planner: app/wt_planner
+    stage:
+      - app/wt_planner
+      - -app/wt_planner/**/__pycache__
+  pygobject:
+    plugin: nil
+    stage-packages:
+      - python3-gi
+  launcher:
+    plugin: dump
+    source: snap/local
+    organize:
+      launch: bin/launch
+    stage:
+      - bin/launch
