@@ -11,7 +11,7 @@ values for World Triathlon racing and are fully editable.
 
 APP_ID = "org.wtplanner.WTPlanner"
 APP_NAME = "Technical Officials Scheduler"
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.4.1"
 FILE_SUFFIX = ".wtplan.json"
 MIME_TYPE = "application/x-wtplan+json"
 

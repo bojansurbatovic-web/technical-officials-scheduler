@@ -1,7 +1,7 @@
 name: technical-officials-scheduler
 title: Technical Officials Scheduler
 base: core24
-version: '1.4.0'
+version: '1.4.1'
 summary: Plan Technical Officials, meetings and athletes' guides for triathlon
 description: |
   Technical Officials Scheduler plans the Technical Officials (referees) of

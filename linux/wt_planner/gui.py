@@ -2287,7 +2287,12 @@ class MainWindow(Gtk.ApplicationWindow):
 # ======================================================================= application
 class PlannerApp(Gtk.Application):
     def __init__(self):
-        super().__init__(application_id=ref.APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN)
+        flags = Gio.ApplicationFlags.HANDLES_OPEN
+        if os.environ.get("SNAP"):
+            # a strictly confined snap may not own the D-Bus name org.wtplanner.WTPlanner; registering would fail
+            # ("Failed to register: AccessDenied") and the app would quit before showing a window
+            flags |= Gio.ApplicationFlags.NON_UNIQUE
+        super().__init__(application_id=ref.APP_ID, flags=flags)
         self.win = None
 
     def do_activate(self):
