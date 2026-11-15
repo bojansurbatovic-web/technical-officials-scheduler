@@ -429,3 +429,16 @@ td.time { font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 560px) { .gallery figure { width: 200px; } }
 .who-head .avatar { font-size: 20px; color: #07101f; }
 .who > dl > dt:first-child { margin-top: 0; }
+
+/* ---------- Story with author photo ---------- */
+.story--photo { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.45fr); gap: 56px; }
+.story-photo { margin: 0; position: sticky; top: 92px; }
+.story-photo img { width: 100%; height: auto; border-radius: 24px; border: 1px solid var(--line-strong); box-shadow: 0 40px 80px -40px rgba(0,0,0,.9); }
+.who--facts { margin-top: 32px; }
+.who--facts dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 28px; }
+.who--facts dl > div dt { margin-top: 0; }
+@media (max-width: 1020px) {
+  .story--photo { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .story-photo { position: static; max-width: 360px; }
+}
+@media (max-width: 560px) { .who--facts dl { grid-template-columns: minmax(0, 1fr); } }
