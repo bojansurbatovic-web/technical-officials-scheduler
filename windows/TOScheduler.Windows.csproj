@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Technical Officials Scheduler for Windows: the shared planner (../web) in a WebView2 window.
-       Build:  dotnet publish -c Release -r win-x64 --self-contained -o publish\x64
+       Build:  dotnet publish -c Release -r win-x64 (self-contained) -o publish\x64
        then make the installer with Inno Setup (installer\TOScheduler.iss). -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
