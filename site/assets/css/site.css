@@ -343,6 +343,8 @@ td.time { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sub-title .app-icon { width: 84px; height: 84px; }
 .sub-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.3rem); font-weight: 800; letter-spacing: -0.03em; }
 .sub-hero .platforms { color: var(--muted); margin-top: 8px; font-size: 15px; }
+.sub-hero .dl-note { color: var(--muted); font-size: 14px; margin-top: 14px; }
+.sub-hero .dl-note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .sub-hero .lede { max-width: 44em; }
 .sub-hero .shots { margin-top: 56px; }
 .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }

@@ -128,6 +128,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="windows-v${APP_VERSION}"
+          # copies without the version in the name, so the website can link to .../releases/latest/download/<name>
+          for a in x64 arm64; do cp "dist/TechnicalOfficialsScheduler-Setup-${APP_VERSION}-${a}.exe" "dist/TechnicalOfficialsScheduler-Setup-${a}.exe"; done
           cat > notes.md <<EOF
           **Technical Officials Scheduler ${APP_VERSION} for Windows 10 and 11**
 
@@ -145,8 +147,8 @@ jobs:
           EOF
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" dist/*.exe --clobber
-            gh release edit "$TAG" --notes-file notes.md --prerelease=${{ inputs.prerelease }}
+            gh release edit "$TAG" --notes-file notes.md --prerelease=${{ inputs.prerelease }} $( [ "${{ inputs.prerelease }}" = "true" ] || echo --latest )
           else
-            gh release create "$TAG" dist/*.exe --title "Technical Officials Scheduler ${APP_VERSION} for Windows" --notes-file notes.md --target "$GITHUB_SHA" $( [ "${{ inputs.prerelease }}" = "true" ] && echo --prerelease )
+            gh release create "$TAG" dist/*.exe --title "Technical Officials Scheduler ${APP_VERSION} for Windows" --notes-file notes.md --target "$GITHUB_SHA" $( [ "${{ inputs.prerelease }}" = "true" ] && echo --prerelease || echo --latest )
           fi
           gh release view "$TAG" --json url,assets -q '.url, (.assets[] | .name + "  " + .url)'
