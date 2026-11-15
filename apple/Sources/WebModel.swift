@@ -14,6 +14,10 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
     private let store = EventStore()
     private var pageReady = false
     private var pendingFiles: [(text: String, name: String)] = []
+    private var reloads = 0
+    /// Set TOS_SELFCHECK=1 when starting the app from Terminal to have it report whether the planner page started.
+    private let selfCheck = ProcessInfo.processInfo.environment["TOS_SELFCHECK"] != nil
+    private static let startURL = URL(string: "\(LocalScheme.scheme)://local/index.html")!
 
     override init() {
         let config = WKWebViewConfiguration()
@@ -37,9 +41,16 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
         #if DEBUG
         if #available(iOS 16.4, macOS 13.3, *) { webView.isInspectable = true }
         #endif
-        if let url = URL(string: "\(LocalScheme.scheme)://local/index.html") {
-            webView.load(URLRequest(url: url))
+        webView.load(URLRequest(url: Self.startURL))
+        if selfCheck {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 20) { [weak self] in
+                if self?.pageReady != true { Self.report("TIMEOUT page did not start") }
+            }
         }
+    }
+
+    private static func report(_ line: String) {
+        FileHandle.standardOutput.write(Data("TOS-SELFCHECK \(line)\n".utf8))
     }
 
     // MARK: - Calls from the menu bar / opened files
@@ -84,8 +95,14 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
                 ok(["platform": Self.platformName])
             case "ready":
                 pageReady = true
+                reloads = 0
                 flushFiles()
                 ok(true)
+                if selfCheck {
+                    webView.evaluateJavaScript("document.querySelectorAll('*').length + ' elements | ' + document.title + ' | ' + (document.body.innerText || '').replace(/\\s+/g, ' ').slice(0, 160)") { value, error in
+                        Self.report("READY \(value ?? error?.localizedDescription ?? "")")
+                    }
+                }
             case "list":
                 ok(store.list())
             case "load":
@@ -200,9 +217,37 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
         return nil
     }
 
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        showLoadError(error)
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        showLoadError(error)
+    }
+
+    /// Never leave a blank window: say what went wrong and offer to try again.
+    private func showLoadError(_ error: Error) {
+        let ns = error as NSError
+        if ns.domain == NSURLErrorDomain && ns.code == NSURLErrorCancelled { return }
+        NSLog("Technical Officials Scheduler: page failed to load – %@", ns.description)
+        if selfCheck { Self.report("LOAD-ERROR \(ns.domain) \(ns.code) \(ns.localizedDescription)") }
+        let html = """
+        <!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+        <body style="font:15px -apple-system,sans-serif;padding:40px;color:#222;background:#f4f5f7">
+        <h2>Technical Officials Scheduler could not start</h2>
+        <p>The planner page did not load (\(ns.domain) \(ns.code)).</p>
+        <p><a href="\(Self.startURL.absoluteString)">Try again</a></p></body>
+        """
+        webView.loadHTMLString(html, baseURL: nil)
+    }
+
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         pageReady = false
-        webView.reload()
+        reloads += 1
+        NSLog("Technical Officials Scheduler: web content process ended (%d)", reloads)
+        if selfCheck { Self.report("CONTENT-PROCESS-ENDED \(reloads)") }
+        if reloads <= 2 { webView.load(URLRequest(url: Self.startURL)) }
+        else { showLoadError(NSError(domain: "WebContentProcess", code: reloads)) }
     }
 
     #if os(macOS)

@@ -1,0 +1,68 @@
+name: Mac app launch check
+# Builds the Mac app with the same App Sandbox entitlements as the App Store build (signed ad hoc),
+# starts it, takes a screenshot and reports whether the planner page started – the check App Review does first.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "apple/**"
+      - "web/**"
+      - ".github/workflows/mac-launch-check.yml"
+
+jobs:
+  launch:
+    name: Start the sandboxed Mac app (${{ matrix.variant }})
+    runs-on: macos-15-intel
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [as-shipped, without-network-client]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the newest Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$X" ]; then X=$(ls -d /Applications/Xcode*.app | sort -V | tail -1); fi
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+          sw_vers
+      - name: Build (Release)
+        run: |
+          brew install xcodegen
+          cd apple && xcodegen generate
+          set -o pipefail
+          xcodebuild -project TOScheduler.xcodeproj -scheme TOScheduler-macOS -configuration Release \
+            -destination 'generic/platform=macOS' -derivedDataPath ../dd build CODE_SIGNING_ALLOWED=NO 2>&1 \
+            | grep -E "error:|warning: .*WebModel|BUILD (SUCCEEDED|FAILED)"
+      - name: Sign ad hoc with the sandbox entitlements
+        run: |
+          APP="dd/Build/Products/Release/Technical Officials Scheduler.app"
+          cp apple/Config/macOS.entitlements ent.plist
+          if [ "${{ matrix.variant }}" = "without-network-client" ]; then
+            /usr/libexec/PlistBuddy -c "Delete :com.apple.security.network.client" ent.plist || true
+          fi
+          codesign --force --deep --sign - --options runtime --entitlements ent.plist "$APP"
+          codesign -d --entitlements - "$APP"
+          ls "$APP/Contents/Resources" | head -20
+          echo "APP=$APP" >> "$GITHUB_ENV"
+      - name: Start the app and look at it
+        run: |
+          mkdir -p out
+          START=$(date "+%Y-%m-%d %H:%M:%S")
+          TOS_SELFCHECK=1 "$APP/Contents/MacOS/Technical Officials Scheduler" > out/app-output.txt 2>&1 &
+          PID=$!
+          sleep 30
+          screencapture -x out/screen.png || echo "screencapture failed"
+          ps -p $PID > /dev/null && echo "app still running" || echo "app is NOT running"
+          kill $PID 2>/dev/null || true
+          log show --start "$START" --style compact \
+            --predicate 'eventMessage CONTAINS[c] "sandbox" OR eventMessage CONTAINS[c] "Technical Officials" OR process BEGINSWITH "com.apple.WebKit"' \
+            2>/dev/null | grep -v "^Timestamp" | tail -400 > out/system-log.txt || true
+          echo "----- app output -----"; cat out/app-output.txt
+          echo "----- denials -----"; grep -i "deny" out/system-log.txt | head -40 || true
+          grep -q "TOS-SELFCHECK READY" out/app-output.txt && echo "RESULT: page started" || echo "RESULT: page did NOT start"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-launch-${{ matrix.variant }}
+          path: out/

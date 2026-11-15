@@ -4,5 +4,8 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key><true/>
 	<key>com.apple.security.files.user-selected.read-write</key><true/>
+	<!-- WKWebView's helper processes (web content, networking) need this inside the App Sandbox even though
+	     the app only shows its own bundled pages; without it the window stays white on launch. -->
+	<key>com.apple.security.network.client</key><true/>
 </dict>
 </plist>
