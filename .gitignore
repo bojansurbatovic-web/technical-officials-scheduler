@@ -27,3 +27,4 @@ windows/obj/
 windows/publish/
 windows/dist/
 windows/installer/MicrosoftEdgeWebview2Setup.exe
+windows/dist-store/

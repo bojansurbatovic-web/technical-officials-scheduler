@@ -21,6 +21,10 @@ on:
         description: Mark the release as a pre-release (for testing before announcing it)
         type: boolean
         default: true
+      store:
+        description: Put the Microsoft Store package and screenshots on the store-assets branch (for uploading in Partner Center)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -51,6 +55,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           if (-not (Test-Path windows/publish/${{ matrix.arch }}/web/index.html)) { Write-Error "web folder missing"; exit 1 }
           "{0:N1} MB" -f ((Get-ChildItem windows/publish/${{ matrix.arch }} -Recurse | Measure-Object Length -Sum).Sum / 1MB)
+      - name: Make the Microsoft Store package (MSIX)
+        shell: pwsh
+        run: pwsh windows/store/make-msix.ps1 -Arch ${{ matrix.arch }} -Version $env:APP_VERSION -PublishDir windows/publish/${{ matrix.arch }} -OutDir windows/dist-store
+      - uses: actions/upload-artifact@v4
+        with:
+          name: store-${{ matrix.arch }}
+          path: windows/dist-store/*.msix
       - name: WebView2 Runtime installer (used only on PCs without it)
         shell: pwsh
         run: Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile windows/installer/MicrosoftEdgeWebview2Setup.exe
@@ -110,6 +121,81 @@ jobs:
         with:
           name: windows-launch-check
           path: out/
+
+  store-bundle:
+    name: Microsoft Store bundle (x64 + ARM64)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: store-*
+          merge-multiple: true
+          path: msix
+      - name: Bundle
+        shell: pwsh
+        run: |
+          $bin = (Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\makeappx.exe" | Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1).DirectoryName
+          New-Item -ItemType Directory -Force store | Out-Null
+          & "$bin\makeappx.exe" bundle /d msix /p "store\TechnicalOfficialsScheduler-$env:APP_VERSION.msixbundle" /bv "$env:APP_VERSION.0" /o
+          if ($LASTEXITCODE) { exit 1 }
+          Get-ChildItem store | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+          Get-Content windows/store/identity.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: store-package
+          path: store/*.msixbundle
+      - name: Put the package and screenshots on the store-assets branch
+        if: github.event_name == 'workflow_dispatch' && inputs.store
+        shell: bash
+        run: |
+          mkdir -p assets && cp store/*.msixbundle assets/ && cp app-store/screenshots/windows-*.png assets/
+          cd assets
+          git init -q -b store-assets
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Microsoft Store package ${APP_VERSION} and screenshots"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" store-assets
+          ls -la
+
+  store-test:
+    name: Install the Store package and start the app (x64)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: store-x64
+          path: msix
+      - name: Sign with a test certificate, install, start
+        shell: pwsh
+        run: |
+          $id = Get-Content windows/store/identity.json -Raw | ConvertFrom-Json
+          $bin = (Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\signtool.exe" | Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1).DirectoryName
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $id.publisher -KeyUsage DigitalSignature -CertStoreLocation Cert:\CurrentUser\My `
+            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+          $pw = ConvertTo-SecureString -String "test" -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath test.pfx -Password $pw | Out-Null
+          Import-PfxCertificate -FilePath test.pfx -CertStoreLocation Cert:\LocalMachine\TrustedPeople -Password $pw | Out-Null
+          $msix = (Get-ChildItem msix/*.msix | Select-Object -First 1).FullName
+          & "$bin\signtool.exe" sign /fd SHA256 /f test.pfx /p test $msix
+          if ($LASTEXITCODE) { exit 1 }
+          Add-AppxPackage -Path $msix
+          $pkg = Get-AppxPackage -Name $id.name
+          "Installed: $($pkg.PackageFullName)"
+          New-Item -ItemType Directory -Force out | Out-Null
+          [Environment]::SetEnvironmentVariable('TOS_SELFCHECK', "$PWD\out\selfcheck.txt", 'User')
+          Start-Process "shell:AppsFolder\$($pkg.PackageFamilyName)!App"
+          Start-Sleep 35
+          $running = Get-Process TOScheduler -ErrorAction SilentlyContinue
+          "App running: " + [bool]$running
+          if (Test-Path out\selfcheck.txt) { Get-Content out\selfcheck.txt } else { "(no self-check report – the Store launch did not pass the variable on)" }
+          $running | Stop-Process -Force -ErrorAction SilentlyContinue
+          Remove-AppxPackage $pkg.PackageFullName
+          if (-not $running) { "RESULT: packaged app did NOT stay running"; exit 1 }
+          if ((Test-Path out\selfcheck.txt) -and -not (Select-String -Path out\selfcheck.txt -Pattern 'TOS-SELFCHECK READY' -Quiet)) { "RESULT: planner did NOT start"; exit 1 }
+          "RESULT: packaged app started"
 
   release:
     name: Publish GitHub release

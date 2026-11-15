@@ -1,12 +1,14 @@
 // App Store screenshots from the app's own screens (same interface as the iPhone/iPad/Mac app).
-// Sizes: iPhone 6.9" 1320x2868, iPad 13" 2064x2752, Mac 2880x1800.
+// Sizes: iPhone 6.9" 1320x2868, iPad 13" 2064x2752, Mac 2880x1800, Windows (Microsoft Store) 2880x1620.
+// ONLY=windows node tools/screenshots.js  – just one set
 const { chromium } = require('playwright');
 const OUT = process.argv[2] || 'app-store/screenshots';
 const sets = [
   ['iphone-6.9', { width: 440, height: 956 }, 3, true],
   ['ipad-13', { width: 1032, height: 1376 }, 2, true],
   ['mac', { width: 1440, height: 900 }, 2, false],
-];
+  ['windows', { width: 1440, height: 810 }, 2, false],
+].filter(s => !process.env.ONLY || s[0] === process.env.ONLY);
 const shots = [['1-assignments', 'assignments'], ['2-gantt', 'gantt'], ['3-meetings', 'meetings'], ['4-races', 'races'], ['5-schedules', 'schedules'], ['6-calendar', 'library'], ['7-athletes', 'athletes']];
 (async () => {
   const b = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
