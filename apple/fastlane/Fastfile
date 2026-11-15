@@ -204,7 +204,8 @@ def update_review_info(p)
   app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
   v = version_for(app, p)
   UI.user_error!("No #{p} version that can be edited for review") unless v
-  notes = File.read(File.join(metadata_dir, "review_information", "notes.txt")).strip
+  own = File.join(metadata_dir, "review_information", "notes-#{p}.txt")
+  notes = File.read(File.exist?(own) ? own : File.join(metadata_dir, "review_information", "notes.txt")).strip
   detail = (v.fetch_app_store_review_detail rescue nil) ||
            v.create_app_store_review_detail(attributes: { notes: notes, demo_account_required: false })
   attrs = { notes: notes, demo_account_required: false }
@@ -227,11 +228,23 @@ def update_review_info(p)
   end
 end
 
+# The newest processed build of this version is the one sent to review (replaces a build Apple sent back).
+def attach_newest_build(app, v, p)
+  builds = app.get_builds(filter: { "preReleaseVersion.version" => v.version_string,
+                                    "preReleaseVersion.platform" => store_platform(p), processingState: "VALID" },
+                          sort: "-uploadedDate", includes: "preReleaseVersion")
+  b = builds.reject { |x| x.expired }.first
+  UI.user_error!("No processed #{p} build of version #{v.version_string} yet") unless b
+  v.select_build(build_id: b.id)
+  UI.success("Build #{v.version_string} (#{b.version}) attached to the #{p} version")
+end
+
 def submit_version(p)
   asc_key
   app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
   v = version_for(app, p)
   UI.user_error!("No #{p} version waiting to be submitted") unless v
+  attach_newest_build(app, v, p)
   subs = app.get_review_submissions(filter: { platform: store_platform(p) }, includes: "items") rescue []
   subs.each { |x| UI.message("Review submission #{x.id} state=#{x.state} items=#{(x.items || []).count}") }
   # a submission Apple sent back ("Information Needed" / rejection) is resubmitted as it is
