@@ -210,3 +210,19 @@ The installers are attached to the GitHub release `windows-v<version>`:
 The installers are not code-signed, so Windows SmartScreen shows "Windows protected your PC" until the file has
 built up reputation (users choose **More info → Run anyway**). To remove the warning, either sign the installer
 (e.g. Azure Trusted Signing) or publish the app in the Microsoft Store (free developer account for individuals).
+
+### Microsoft Store
+
+The app is in the Microsoft Store as **Technical Officials Scheduler**, Store ID `9NGDB0JJ5TZM`
+(<https://apps.microsoft.com/detail/9NGDB0JJ5TZM>). The Store package is MSIX, signed by the Store, so there is no
+SmartScreen warning.
+
+- Product identity (from Partner Center → Product identity) is in `windows/store/identity.json`;
+  the manifest template, tile images and `make-msix.ps1` are in `windows/store/`.
+- Every run of **Windows app** builds `TechnicalOfficialsScheduler-<version>-x64.msix` and `-arm64.msix`, installs
+  the x64 package on a Windows machine with a test certificate and checks that the planner opens.
+- For an update: raise the version, run **Actions → Windows app** with **store** ticked. The packages and the Store
+  screenshots are put on the `store-assets` branch. In Partner Center: **Update** the submission, replace the
+  packages under *Packages* (the files from `store-assets`), add *What's new* in the Store listing, and submit.
+- The `runFullTrust` capability (needed by every packaged desktop app) is explained in *Submission options*.
+

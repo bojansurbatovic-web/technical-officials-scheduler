@@ -5,7 +5,7 @@ Plans the **Technical Officials (TOs)** of triathlon events run under the World 
 | Version | Where |
 |---|---|
 | iPhone, iPad, Mac | App Store (see [PUBLISHING.md](PUBLISHING.md)) – native SwiftUI shell in [`apple/`](apple) |
-| Windows 10 / 11 | Installer (x64 and ARM64) from [GitHub Releases](https://github.com/bojansurbatovic-web/technical-officials-scheduler/releases) – WebView2 shell in [`windows/`](windows) |
+| Windows 10 / 11 | [Microsoft Store](https://apps.microsoft.com/detail/9NGDB0JJ5TZM) (MSIX) · installer (x64 and ARM64) from [GitHub Releases](https://github.com/bojansurbatovic-web/technical-officials-scheduler/releases) – WebView2 shell in [`windows/`](windows) |
 | Web | https://trisport.me/app/ – works offline, can be added to the home screen |
 | Ubuntu desktop (GTK) | Snap Store: `sudo snap install technical-officials-scheduler` (see PUBLISHING.md) · or from [`linux/`](linux): `./build-deb.sh` and `sudo apt install ./dist/wt-planner_*.deb` |
 
