@@ -116,7 +116,7 @@ sealed class MainForm : Form
         if (root == null || root["__tos"] is not JsonValue idValue || !idValue.TryGetValue<double>(out var id)) return;
         var msg = root["msg"] as JsonObject ?? new JsonObject();
         var reply = new JsonObject { ["__tos"] = id };
-        try { reply["result"] = await Handle(msg); }
+        try { reply["result"] = await HandleAction(msg); }
         catch (Exception ex) { reply["error"] = ex.Message; }
         try { web.CoreWebView2?.PostWebMessageAsJson(reply.ToJsonString()); } catch { /* window closing */ }
     }
@@ -124,7 +124,7 @@ sealed class MainForm : Form
     static string Str(JsonObject o, string key) =>
         o[key] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
 
-    async Task<JsonNode?> Handle(JsonObject msg)
+    async Task<JsonNode?> HandleAction(JsonObject msg)
     {
         var id = Str(msg, "id");
         switch (Str(msg, "action"))

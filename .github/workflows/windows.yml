@@ -17,6 +17,10 @@ on:
         description: Publish the installers as a GitHub release
         type: boolean
         default: false
+      prerelease:
+        description: Mark the release as a pre-release (for testing before announcing it)
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -141,8 +145,8 @@ jobs:
           EOF
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" dist/*.exe --clobber
-            gh release edit "$TAG" --notes-file notes.md
+            gh release edit "$TAG" --notes-file notes.md --prerelease=${{ inputs.prerelease }}
           else
-            gh release create "$TAG" dist/*.exe --title "Technical Officials Scheduler ${APP_VERSION} for Windows" --notes-file notes.md --target "$GITHUB_SHA"
+            gh release create "$TAG" dist/*.exe --title "Technical Officials Scheduler ${APP_VERSION} for Windows" --notes-file notes.md --target "$GITHUB_SHA" $( [ "${{ inputs.prerelease }}" = "true" ] && echo --prerelease )
           fi
           gh release view "$TAG" --json url,assets -q '.url, (.assets[] | .name + "  " + .url)'
