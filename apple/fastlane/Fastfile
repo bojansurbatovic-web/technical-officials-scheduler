@@ -236,7 +236,28 @@ def attach_newest_build(app, v, p)
   b = builds.reject { |x| x.expired }.first
   UI.user_error!("No processed #{p} build of version #{v.version_string} yet") unless b
   v.select_build(build_id: b.id)
+  UI.message("Build #{b.version}: encryption=#{b.uses_non_exempt_encryption.inspect} audience=#{(b.build_audience_type rescue '?')}")
   UI.success("Build #{v.version_string} (#{b.version}) attached to the #{p} version")
+end
+
+# A submission Apple sent back keeps its items "unresolved" until they are marked resolved
+# (the web page does this when you change the version and press Resubmit).
+def resolve_items(sub)
+  client = Spaceship::ConnectAPI.client.tunes_request_client
+  resp = client.get("reviewSubmissions/#{sub.id}/items")
+  (resp.body["data"] || []).each do |item|
+    UI.message("Item #{item['id']} #{item['attributes'].to_json}")
+    next unless item.dig("attributes", "state").to_s == "REJECTED" || item.dig("attributes", "resolved") == false
+    body = { data: { type: "reviewSubmissionItems", id: item["id"], attributes: { resolved: true } } }
+    begin
+      r = client.patch("reviewSubmissionItems/#{item['id']}", body)
+      UI.message("Marked resolved: #{(r.body['data'] || {})['attributes'].to_json}")
+    rescue => e
+      UI.important("Could not mark item #{item['id']} resolved: #{e.message.lines.first}")
+    end
+  end
+rescue => e
+  UI.important("Could not read the submission items: #{e.message.lines.first}")
 end
 
 def submit_version(p)
@@ -255,6 +276,7 @@ def submit_version(p)
       (x.cancel_submission rescue nil)
     end
     UI.message("Resubmitting the submission Apple sent back (#{sub.id})")
+    resolve_items(sub)
   else
     subs.select { |x| x.state == "READY_FOR_REVIEW" && (x.items || []).empty? }.each do |x|
       begin
