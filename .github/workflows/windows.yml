@@ -150,7 +150,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.store
         shell: bash
         run: |
-          mkdir -p assets && cp store/*.msixbundle assets/ && cp app-store/screenshots/windows-*.png assets/
+          mkdir -p assets && cp msix/*.msix assets/ && cp app-store/screenshots/windows-*.png assets/   # one package per architecture: each stays under GitHub's 100 MB file limit
           cd assets
           git init -q -b store-assets
           git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
