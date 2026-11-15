@@ -246,8 +246,8 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
         reloads += 1
         NSLog("Technical Officials Scheduler: web content process ended (%d)", reloads)
         if selfCheck { Self.report("CONTENT-PROCESS-ENDED \(reloads)") }
+        // Try again twice, then stop (an error page needs the same process, so loading one would loop).
         if reloads <= 2 { webView.load(URLRequest(url: Self.startURL)) }
-        else { showLoadError(NSError(domain: "WebContentProcess", code: reloads)) }
     }
 
     #if os(macOS)
