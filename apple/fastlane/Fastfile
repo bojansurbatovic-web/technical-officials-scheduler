@@ -277,10 +277,20 @@ def submit_version(p)
       UI.important("Adding the version: #{e.message}")
     end
   end
+  # right after a build change App Store Connect can answer "not ready to be submitted yet" for a few minutes
+  attempts = 0
   begin
+    attempts += 1
     sub.submit_for_review
   rescue Spaceship::UnexpectedResponse => e
     UI.error("App Store Connect says: #{e.message}")
+    info = (e.error_info rescue nil)
+    UI.message("Details: #{info.to_json}") if info
+    if attempts < 6 && e.message.include?("try again later")
+      UI.message("Waiting 2 minutes before trying again (#{attempts}/5)")
+      sleep 120
+      retry
+    end
     raise
   end
   UI.success("#{p} version #{v.version_string} submitted for App Review")
