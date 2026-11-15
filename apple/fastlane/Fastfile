@@ -244,7 +244,7 @@ end
 # (the web page does this when you change the version and press Resubmit).
 def resolve_items(sub)
   client = Spaceship::ConnectAPI.client.tunes_request_client
-  resp = client.get("reviewSubmissions/#{sub.id}", { include: "items" })
+  resp = client.get("v1/reviewSubmissions/#{sub.id}", { include: "items" })
   items = (resp.body["included"] || []).select { |x| x["type"] == "reviewSubmissionItems" }
   UI.message("Submission #{resp.body.dig('data', 'attributes').to_json} – #{items.count} item(s)")
   items.each do |item|
@@ -252,7 +252,7 @@ def resolve_items(sub)
     next if item.dig("attributes", "resolved") == true
     body = { data: { type: "reviewSubmissionItems", id: item["id"], attributes: { resolved: true } } }
     begin
-      r = client.patch("reviewSubmissionItems/#{item['id']}", body)
+      r = client.patch("v1/reviewSubmissionItems/#{item['id']}", body)
       UI.message("Marked resolved: #{(r.body['data'] || {})['attributes'].to_json}")
     rescue => e
       UI.important("Could not mark item #{item['id']} resolved: #{e.message.lines.first}")
@@ -266,7 +266,7 @@ end
 def raw_submit(sub)
   client = Spaceship::ConnectAPI.client.tunes_request_client
   body = { data: { type: "reviewSubmissions", id: sub.id, attributes: { submitted: true } } }
-  r = client.patch("reviewSubmissions/#{sub.id}", body)
+  r = client.patch("v1/reviewSubmissions/#{sub.id}", body)
   UI.message("Answer #{r.status}: #{r.body.to_json[0, 3000]}")
   r.status.to_i < 300
 rescue => e
