@@ -1,6 +1,6 @@
 {
-  "comment": "Partner Center → Technical Officials Scheduler → Product identity. Placeholders until the name is reserved.",
-  "name": "TriSport.TechnicalOfficialsScheduler.Test",
-  "publisher": "CN=TOSchedulerTest",
-  "publisherDisplayName": "TriSport.me"
+  "comment": "Partner Center → Technical Officials Scheduler (Store ID 9NGDB0JJ5TZM) → Product identity",
+  "name": "b.surbatowitz.TechnicalOfficialsScheduler",
+  "publisher": "CN=5568068B-9CFA-4DFF-8F05-FD096D36EAB5",
+  "publisherDisplayName": "b.surbatowitz"
 }
