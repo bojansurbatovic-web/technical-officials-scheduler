@@ -5,6 +5,7 @@ Plans the **Technical Officials (TOs)** of triathlon events run under the World 
 | Version | Where |
 |---|---|
 | iPhone, iPad, Mac | App Store (see [PUBLISHING.md](PUBLISHING.md)) – native SwiftUI shell in [`apple/`](apple) |
+| Windows 10 / 11 | Installer (x64 and ARM64) from [GitHub Releases](https://github.com/bojansurbatovic-web/technical-officials-scheduler/releases) – WebView2 shell in [`windows/`](windows) |
 | Web | https://trisport.me/app/ – works offline, can be added to the home screen |
 | Ubuntu desktop (GTK) | Snap Store: `sudo snap install technical-officials-scheduler` (see PUBLISHING.md) · or from [`linux/`](linux): `./build-deb.sh` and `sudo apt install ./dist/wt-planner_*.deb` |
 
@@ -37,18 +38,19 @@ All versions read and write the same `.wtplan.json` plan files.
 ## Repository layout
 
 ```
-web/            the app (HTML/CSS/plain JavaScript, no dependencies) – used by the web, iPhone, iPad and Mac versions
+web/            the app (HTML/CSS/plain JavaScript, no dependencies) – used by the web, iPhone, iPad, Mac and Windows versions
   js/engine.js      planning engine (port of linux/wt_planner/engine.py)
   js/exporters.js   XLSX / ODS / ICS / SVG / JSON
   js/reference.js   rule data, generated from linux/wt_planner/reference.py
   js/app.js         screens; js/storage.js files & sharing (native bridge or browser storage)
 apple/          SwiftUI shell (iOS 16+, iPadOS, macOS 13+), XcodeGen project.yml, fastlane lanes
+windows/        Windows app (C# / .NET 8 WinForms + WebView2) and its Inno Setup installer
 site/           trisport.me (GitHub Pages): home page for all apps, Scheduler pages in scheduler/, privacy and support
 linux/          Ubuntu desktop app (Python 3 + GTK 3) – the reference implementation
 tests/          engine & export tests against golden files from the Python engine, UI tests (Playwright)
 tools/          generators for reference data, examples, golden files, screenshots; Apple signing helper
 app-store/      listing text and screenshots for App Store Connect
-.github/        CI (tests + unsigned Xcode build), Pages deployment, TestFlight upload
+.github/        CI (tests + unsigned Xcode build), Mac launch check, Windows installers, Pages, TestFlight, Snap
 ```
 
 ## Developing
@@ -73,6 +75,8 @@ The iPhone, iPad and Mac app loads `web/` from its bundle through a private `tos
 * the share sheet or save panel
 * the clipboard
 * files opened from Files or Finder
+
+The Windows app serves `web/` from its install folder at `https://app.tos-scheduler.example/` (a WebView2 virtual host, never the network) and injects [`windows/bridge.js`](windows/bridge.js), which gives the page the same `window.webkit.messageHandlers.tos` bridge over WebView2 messages. Events are files in `Documents\Technical Officials Scheduler\Events`, exports open the Save As dialog. The workflow [`windows.yml`](.github/workflows/windows.yml) builds self-contained x64 and ARM64 apps, packs them with Inno Setup (Start menu, optional desktop icon, uninstaller, WebView2 Runtime when missing, no admin rights needed), installs the x64 one on a Windows machine and checks that the planner opens; run it by hand with **release** ticked to publish the installers on GitHub Releases.
 
 ## Licence
 

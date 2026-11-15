@@ -202,6 +202,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       return refreshLibrary();
     }).catch(function (e) { toast('Not saved: ' + e.message, 5000); });
   }
+  A.flush = saveNow;   // the Windows app saves before its window closes
   function refreshLibrary() { return Store.list().then(function (l) { A.library = l || []; if (A.section === 'library') render(); }); }
   function newDocId() { return 'ev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6); }
   function openEvent(ev, docId, goTo) {
@@ -1009,7 +1010,8 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     toast({ downloaded: 'Downloaded', cancelled: 'Cancelled', saved: 'Saved', shared: 'Shared', failed: 'Could not export' }[how] || 'Done');
   }
   SECTIONS.export = function (root) {
-    root.appendChild(header('Export & share', Store.native ? 'Each export opens the share sheet: save to Files, AirDrop, mail or open it in another app.' :
+    root.appendChild(header('Export & share', Store.platform === 'windows' ? 'Each export opens a Save dialog – choose where the file goes.' :
+      Store.native ? 'Each export opens the share sheet: save to Files, AirDrop, mail or open it in another app.' :
       'Each export downloads a file.'));
     function item(title, desc, onClick, label) {
       return h('div', { class: 'list-row exp-row' }, h('div', { class: 'grow' }, h('strong', { text: title }), h('div', { class: 'muted small', text: desc })), btn(label || 'Export', onClick, 'primary'));
@@ -1084,12 +1086,15 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         h('p', { class: 'muted', text: 'Independent tool. Not affiliated with, endorsed by or sponsored by World Triathlon. Always check the plan against the current rules and your Technical Delegate.' }))),
       card('Privacy', h('div', { class: 'stack' },
         h('p', { text: 'Your events stay on your device. The app has no account, no analytics, no advertising and makes no network requests.' }),
-        h('p', { text: Store.native ? 'Events are saved as files in the app’s folder (Files app → On My iPhone/iPad → TO Scheduler, or the app container on Mac). Deleting the app deletes them – export the ones you want to keep.' :
+        h('p', { text: Store.platform === 'windows' ? 'Events are saved as files in Documents\\Technical Officials Scheduler\\Events. Uninstalling the app keeps them.' :
+          Store.native ? 'Events are saved as files in the app’s folder (Files app → On My iPhone/iPad → TO Scheduler, or the app container on Mac). Deleting the app deletes them – export the ones you want to keep.' :
           'In a browser, events are kept in this browser’s storage on this device only.' }),
         h('p', { class: 'muted', text: 'Anything you export or share leaves the app only where you send it.' }))),
       card('Keyboard', h('ul', { class: 'bullets' },
-        h('li', { text: Store.platform === 'macos' ? '⌥⌘Z – undo a plan change, ⌥⇧⌘Z – redo, ⌘R – auto-assign' : '⌘Z / Ctrl+Z – undo, ⇧⌘Z / Ctrl+Shift+Z – redo' }),
-        h('li', { text: '⌘N – new event, ⌘O – open a plan file' + (Store.platform === 'macos' ? ', ⌘E – export' : '') }))),
+        h('li', { text: Store.platform === 'macos' ? '⌥⌘Z – undo a plan change, ⌥⇧⌘Z – redo, ⌘R – auto-assign' :
+          Store.platform === 'windows' ? 'Ctrl+Z – undo, Ctrl+Y or Ctrl+Shift+Z – redo' : '⌘Z / Ctrl+Z – undo, ⇧⌘Z / Ctrl+Shift+Z – redo' }),
+        h('li', { text: Store.platform === 'windows' ? 'Ctrl+N – new event, Ctrl+O – open a plan file, Ctrl+E – export' :
+          '⌘N – new event, ⌘O – open a plan file' + (Store.platform === 'macos' ? ', ⌘E – export' : '') }))),
       card('Open source', h('p', null, 'MIT licence. Source and the Ubuntu desktop version: ',
         h('a', { href: 'https://github.com/bojansurbatovic-web/technical-officials-scheduler', on: { click: function (e) { e.preventDefault(); Store.openLink(e.currentTarget.href); } } }, 'github.com/bojansurbatovic-web/technical-officials-scheduler')))));
   };
@@ -1109,9 +1114,12 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     var k = e.key.toLowerCase();
     if (k === 'z' && tag !== 'input' && tag !== 'textarea') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
     else if (k === 'y' && tag !== 'input') { e.preventDefault(); redo(); }
-    else if (k === 'n' && !Store.native) { e.preventDefault(); A.command('new'); }
-    else if (k === 'o' && !Store.native) { e.preventDefault(); A.command('open'); }
+    else if (k === 'n' && ownKeys()) { e.preventDefault(); A.command('new'); }
+    else if (k === 'o' && ownKeys()) { e.preventDefault(); A.command('open'); }
+    else if (k === 'e' && Store.platform === 'windows') { e.preventDefault(); A.command('export'); }
   }
+  // the Apple apps handle ⌘N / ⌘O in their menu bar; the browser and the Windows app handle them here
+  function ownKeys() { return !Store.native || Store.platform === 'windows'; }
   A.start = function () {
     document.getElementById('btn-undo').addEventListener('click', undo);
     document.getElementById('btn-redo').addEventListener('click', redo);

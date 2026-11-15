@@ -196,3 +196,17 @@ sudo snap install technical-officials-scheduler
 ```
 
 Pushes to `main` that change `linux/` or `snap/` go to the `edge` channel. Use *Run workflow* with `stable` to release.
+
+## Windows
+
+The workflow **Windows app** (`.github/workflows/windows.yml`) runs on every change to `web/` or `windows/`:
+it builds the app for x64 and ARM64 PCs, makes the installers with Inno Setup, installs the x64 installer on a
+Windows machine, starts the app and checks that the planner opens, then uninstalls it.
+
+To publish a version: **Actions → Windows app → Run workflow**, enter the version and tick **release**.
+The installers are attached to the GitHub release `windows-v<version>`:
+<https://github.com/bojansurbatovic-web/technical-officials-scheduler/releases>
+
+The installers are not code-signed, so Windows SmartScreen shows "Windows protected your PC" until the file has
+built up reputation (users choose **More info → Run anyway**). To remove the warning, either sign the installer
+(e.g. Azure Trusted Signing) or publish the app in the Microsoft Store (free developer account for individuals).

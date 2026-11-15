@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Technical Officials Scheduler for Windows: the shared planner (../web) in a WebView2 window.
+       Build:  dotnet publish -c Release -r win-x64 --self-contained -o publish\x64
+       then make the installer with Inno Setup (installer\TOScheduler.iss). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>TOScheduler</AssemblyName>
+    <RootNamespace>TOScheduler</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Version>1.0.1</Version>
+    <Product>Technical Officials Scheduler</Product>
+    <AssemblyTitle>Technical Officials Scheduler</AssemblyTitle>
+    <Company>TriSport.me</Company>
+    <Copyright>MIT licence. Not affiliated with World Triathlon.</Copyright>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="app.ico" LogicalName="app.ico" />
+    <EmbeddedResource Include="bridge.js" LogicalName="bridge.js" />
+    <!-- the planner itself, shared with the web, Apple and Ubuntu versions -->
+    <Content Include="..\web\**\*" LinkBase="web" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

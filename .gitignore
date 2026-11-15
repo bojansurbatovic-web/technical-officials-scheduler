@@ -20,3 +20,10 @@ __pycache__/
 *.base64.txt
 .DS_Store
 apple/fastlane/screenshots*/
+
+# Windows build outputs
+windows/bin/
+windows/obj/
+windows/publish/
+windows/dist/
+windows/installer/MicrosoftEdgeWebview2Setup.exe

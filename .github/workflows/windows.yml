@@ -1,0 +1,148 @@
+name: Windows app
+# Builds the Windows app (x64 and ARM64) and its installers, installs the x64 one on a Windows machine,
+# starts the app and checks that the planner opens. Run it by hand with "release" ticked to publish the
+# installers as a GitHub release (the download page).
+on:
+  push:
+    paths:
+      - "windows/**"
+      - "web/**"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version (e.g. 1.0.1)
+        default: "1.0.1"
+      release:
+        description: Publish the installers as a GitHub release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  APP_VERSION: ${{ inputs.version || '1.0.1' }}
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  build:
+    name: Build installer (${{ matrix.arch }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Build the app (self-contained – no .NET install needed on the PC)
+        shell: pwsh
+        run: |
+          dotnet publish windows/TOScheduler.Windows.csproj -c Release -r win-${{ matrix.arch }} --self-contained true `
+            -p:Version=$env:APP_VERSION -o windows/publish/${{ matrix.arch }}
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Test-Path windows/publish/${{ matrix.arch }}/web/index.html)) { Write-Error "web folder missing"; exit 1 }
+          "{0:N1} MB" -f ((Get-ChildItem windows/publish/${{ matrix.arch }} -Recurse | Measure-Object Length -Sum).Sum / 1MB)
+      - name: WebView2 Runtime installer (used only on PCs without it)
+        shell: pwsh
+        run: Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile windows/installer/MicrosoftEdgeWebview2Setup.exe
+      - name: Make the installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          & $iscc /Q /DAppVersion=$env:APP_VERSION /DArch=${{ matrix.arch }} windows/installer/TOScheduler.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem windows/dist | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.arch }}
+          path: windows/dist/*.exe
+
+  launch:
+    name: Install and start the app (x64)
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: installer-x64
+          path: dist
+      - name: Install silently, start the app, check the planner opens
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          $setup = (Get-ChildItem dist/*.exe | Select-Object -First 1).FullName
+          Start-Process $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/LOG=$PWD\out\install.log" -Wait
+          $exe = "$env:LOCALAPPDATA\Programs\Technical Officials Scheduler\TOScheduler.exe"
+          if (-not (Test-Path $exe)) { Write-Error "Not installed where expected"; Get-Content out\install.log -Tail 40; exit 1 }
+          "Start menu: " + (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Technical Officials Scheduler.lnk")
+          $env:TOS_SELFCHECK = "$PWD\out\selfcheck.txt"
+          $p = Start-Process $exe -PassThru
+          Start-Sleep 35
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          try {
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            $bmp.Save("$PWD\out\screen.png")
+          } catch { "screenshot failed: $_" }
+          "App running: " + (-not $p.HasExited)
+          $p.CloseMainWindow() | Out-Null; Start-Sleep 3; if (-not $p.HasExited) { $p.Kill() }
+          "Events folder: " + (Test-Path "$([Environment]::GetFolderPath('MyDocuments'))\Technical Officials Scheduler\Events")
+          "----- self check -----"
+          if (Test-Path out\selfcheck.txt) { Get-Content out\selfcheck.txt } else { "(no report)" }
+          if (-not (Select-String -Path out\selfcheck.txt -Pattern 'TOS-SELFCHECK READY' -Quiet)) { "RESULT: planner did NOT start"; exit 1 }
+          "RESULT: planner started"
+          $u = "$env:LOCALAPPDATA\Programs\Technical Officials Scheduler\unins000.exe"
+          Start-Process $u -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES' -Wait
+          "Uninstalled: " + (-not (Test-Path $exe))
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-launch-check
+          path: out/
+
+  release:
+    name: Publish GitHub release
+    if: github.event_name == 'workflow_dispatch' && inputs.release
+    needs: [build, launch]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          merge-multiple: true
+          path: dist
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="windows-v${APP_VERSION}"
+          cat > notes.md <<EOF
+          **Technical Officials Scheduler ${APP_VERSION} for Windows 10 and 11**
+
+          Download the installer for your PC and run it:
+          - **TechnicalOfficialsScheduler-Setup-${APP_VERSION}-x64.exe** – most PCs (Intel / AMD)
+          - **TechnicalOfficialsScheduler-Setup-${APP_VERSION}-arm64.exe** – PCs with an ARM processor (e.g. Snapdragon)
+
+          The installer adds the app to the Start menu (and optionally the desktop), installs the Microsoft Edge WebView2
+          Runtime if the PC does not have it, and can be removed in Settings → Apps. No administrator rights are needed.
+          Events are saved in Documents\\Technical Officials Scheduler\\Events.
+
+          Windows may show "Windows protected your PC" because the installer is new: choose **More info → Run anyway**.
+
+          Website and help: https://www.trisport.me/ – not affiliated with World Triathlon.
+          EOF
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.exe --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/*.exe --title "Technical Officials Scheduler ${APP_VERSION} for Windows" --notes-file notes.md --target "$GITHUB_SHA"
+          fi
+          gh release view "$TAG" --json url,assets -q '.url, (.assets[] | .name + "  " + .url)'
