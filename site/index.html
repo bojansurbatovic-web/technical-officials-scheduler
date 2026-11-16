@@ -14,7 +14,13 @@
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/css/site.css">
 </head>
-<body>
+<body class="has-bgv">
+<div class="bgv" aria-hidden="true">
+  <video autoplay muted loop playsinline preload="auto" poster="assets/video/trisport-bg-sequence-poster.jpg">
+    <source src="assets/video/trisport-bg-sequence.mp4" type="video/mp4">
+  </video>
+</div>
+<div class="bgv-shade" aria-hidden="true"></div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20a7 7 0 0 1-7-7c0-6 5-9 16-9 0 9-3 16-9 16z"/><path d="M4 21c2-6 6-9 11-11"/></symbol>
   <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
