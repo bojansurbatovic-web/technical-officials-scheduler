@@ -1,0 +1,90 @@
+/* Technical Officials Scheduler – splash screen.
+   Colours taken from the opening video: tri-suit navy, sunset cream and gold. */
+.tos-splash {
+  --sp-navy: #121a2b;
+  --sp-navy-2: #1c2640;
+  --sp-cream: #fcf4ec;
+  --sp-gold: #e9a964;
+  --sp-sand: #cdb8a3;
+  position: absolute; inset: 0; z-index: 1000; overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  container-type: size; container-name: sp;
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(233, 169, 100, .22), rgba(233, 169, 100, 0) 60%),
+    linear-gradient(180deg, var(--sp-navy-2), var(--sp-navy) 70%);
+  color: var(--sp-cream);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: opacity .5s ease, transform .5s ease;
+}
+body > .tos-splash { position: fixed; }
+.tos-splash.out { opacity: 0; transform: scale(1.035); pointer-events: none; }
+.sp-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.tos-splash video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* brand: icon + name */
+.sp-brand { display: flex; align-items: center; gap: 3.2cqmin; }
+.sp-icon { width: 11cqmin; height: 11cqmin; border-radius: 22%; box-shadow: 0 1.2cqmin 3cqmin rgba(0, 0, 0, .35); }
+.sp-name { margin: 0; font-weight: 700; line-height: 1.02; letter-spacing: -.01em; font-size: 6.4cqmin; }
+.sp-name span { display: block; }
+.sp-name .sp-gold { color: var(--sp-gold); }
+.sp-rule { height: .45cqmin; width: 9cqmin; background: var(--sp-gold); border-radius: 1cqmin; margin-top: 1.6cqmin; transform-origin: left; }
+
+/* the three scenes */
+.sp-panels { display: grid; gap: 1.4cqmin; }
+.sp-panel { position: relative; overflow: hidden; border-radius: 1.2cqmin; background: #0b111d; box-shadow: 0 1.5cqmin 4cqmin rgba(0, 0, 0, .35); }
+.sp-panel canvas { display: block; width: 100%; height: 100%; }
+.sp-label { position: absolute; left: 1.6cqmin; bottom: 1.4cqmin; font-size: 1.9cqmin; font-weight: 700; letter-spacing: .28em;
+  color: var(--sp-navy); background: var(--sp-gold); padding: .55cqmin 1.1cqmin .5cqmin 1.4cqmin; border-radius: .6cqmin; }
+
+.sp-site { position: absolute; bottom: 4.5cqmin; left: 0; right: 0; text-align: center;
+  font-size: 2.6cqmin; font-weight: 600; letter-spacing: .32em; color: var(--sp-cream); }
+.sp-site b { color: var(--sp-gold); font-weight: 600; }
+.sp-skip { position: absolute; top: 3cqmin; right: 3.4cqmin; font-size: 1.7cqmin; letter-spacing: .12em; color: var(--sp-sand); opacity: .75; }
+
+/* wide window: name above a film strip, swim – bike – run side by side */
+.tos-splash.band .sp-stage { gap: 6cqmin; padding-bottom: 6cqmin; }
+.tos-splash.band .sp-panels { grid-template-columns: repeat(3, 1fr); width: min(92cqw, 236cqh); }
+.tos-splash.band .sp-panel { aspect-ratio: 716 / 423; }
+
+/* phone: name on top, scenes stacked as in the video */
+.tos-splash.stack .sp-stage { justify-content: flex-start; padding: 11cqh 5cqw 0; gap: 4.5cqh; }
+.tos-splash.stack .sp-brand { align-self: flex-start; }
+.tos-splash.stack .sp-icon { width: 15cqmin; height: 15cqmin; }
+.tos-splash.stack .sp-name { font-size: 8.6cqmin; }
+.tos-splash.stack .sp-panels { width: 100%; grid-template-rows: repeat(3, 1fr); height: 58cqh; }
+.tos-splash.stack .sp-label { font-size: 2.6cqmin; }
+.tos-splash.stack .sp-site { font-size: 3.4cqmin; bottom: 5.5cqh; }
+.tos-splash.stack .sp-skip { font-size: 2.6cqmin; top: 5cqh; }
+
+/* animation – everything starts hidden and plays when .go is added */
+.tos-splash .sp-panel { clip-path: inset(100% 0 0 0); }
+.tos-splash .sp-panel canvas { transform: scale(1.12); }
+.tos-splash .sp-icon, .tos-splash .sp-name span, .tos-splash .sp-label, .tos-splash .sp-site, .tos-splash .sp-skip { opacity: 0; }
+.tos-splash .sp-rule { transform: scaleX(0); }
+
+.tos-splash.go .sp-panel { animation: sp-wipe .9s cubic-bezier(.2, .8, .2, 1) forwards; }
+.tos-splash.go .sp-panel canvas { animation: sp-settle 2.6s cubic-bezier(.2, .8, .2, 1) forwards; }
+.tos-splash.go .sp-panel:nth-child(2), .tos-splash.go .sp-panel:nth-child(2) canvas { animation-delay: .14s; }
+.tos-splash.go .sp-panel:nth-child(3), .tos-splash.go .sp-panel:nth-child(3) canvas { animation-delay: .28s; }
+.tos-splash.go .sp-icon { animation: sp-pop .6s cubic-bezier(.2, .9, .3, 1.25) .45s forwards; }
+.tos-splash.go .sp-name span { animation: sp-rise .7s cubic-bezier(.2, .8, .2, 1) .62s forwards; }
+.tos-splash.go .sp-name span + span { animation-delay: .78s; }
+.tos-splash.go .sp-rule { animation: sp-grow .6s cubic-bezier(.2, .8, .2, 1) 1.05s forwards; }
+.tos-splash.go .sp-label { animation: sp-fade .5s ease 1.0s forwards; }
+.tos-splash.go .sp-panel:nth-child(2) .sp-label { animation-delay: 1.12s; }
+.tos-splash.go .sp-panel:nth-child(3) .sp-label { animation-delay: 1.24s; }
+.tos-splash.go .sp-site { animation: sp-site 1.1s cubic-bezier(.2, .8, .2, 1) 1.35s forwards; }
+.tos-splash.go .sp-skip { animation: sp-fade .6s ease 1.8s forwards; }
+
+@keyframes sp-wipe { to { clip-path: inset(0 0 0 0); } }
+@keyframes sp-settle { to { transform: scale(1); } }
+@keyframes sp-pop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
+@keyframes sp-rise { from { opacity: 0; transform: translateY(.45em); } to { opacity: 1; transform: none; } }
+@keyframes sp-grow { to { transform: scaleX(1); } }
+@keyframes sp-fade { to { opacity: 1; } }
+@keyframes sp-site { from { opacity: 0; letter-spacing: .12em; } to { opacity: .92; letter-spacing: .32em; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tos-splash.go * { animation-duration: .01s !important; animation-delay: 0s !important; }
+}

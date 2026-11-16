@@ -21,7 +21,18 @@ final class LocalScheme: NSObject, WKURLSchemeHandler {
             urlSchemeTask.didFinish()
             return
         }
-        let headers = ["Content-Type": Self.mime(for: file.pathExtension), "Content-Length": String(data.count), "Cache-Control": "no-store"]
+        let type = Self.mime(for: file.pathExtension)
+        // Video is read in pieces: answer "Range: bytes=a-b" requests with 206 and just those bytes.
+        if let range = urlSchemeTask.request.value(forHTTPHeaderField: "Range"), let r = Self.byteRange(range, size: data.count) {
+            let headers = ["Content-Type": type, "Content-Length": String(r.count), "Accept-Ranges": "bytes",
+                           "Content-Range": "bytes \(r.lowerBound)-\(r.upperBound - 1)/\(data.count)", "Cache-Control": "no-store"]
+            let resp = HTTPURLResponse(url: url, statusCode: 206, httpVersion: "HTTP/1.1", headerFields: headers)!
+            urlSchemeTask.didReceive(resp)
+            urlSchemeTask.didReceive(data.subdata(in: r))
+            urlSchemeTask.didFinish()
+            return
+        }
+        let headers = ["Content-Type": type, "Content-Length": String(data.count), "Accept-Ranges": "bytes", "Cache-Control": "no-store"]
         let resp = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: headers)!
         urlSchemeTask.didReceive(resp)
         urlSchemeTask.didReceive(data)
@@ -29,6 +40,23 @@ final class LocalScheme: NSObject, WKURLSchemeHandler {
     }
 
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+
+    /// "bytes=0-1", "bytes=100-", "bytes=-500" → the byte range inside a file of `size` bytes.
+    static func byteRange(_ header: String, size: Int) -> Range<Int>? {
+        guard size > 0, header.hasPrefix("bytes="), !header.contains(",") else { return nil }
+        let spec = header.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
+        guard spec.count == 2 else { return nil }
+        let a = Int(spec[0].trimmingCharacters(in: .whitespaces)), b = Int(spec[1].trimmingCharacters(in: .whitespaces))
+        var lo: Int, hi: Int
+        switch (a, b) {
+        case let (x?, y?): lo = x; hi = min(y, size - 1)
+        case let (x?, nil): lo = x; hi = size - 1
+        case let (nil, y?): lo = max(0, size - y); hi = size - 1
+        default: return nil
+        }
+        guard lo >= 0, lo <= hi, lo < size else { return nil }
+        return lo..<(hi + 1)
+    }
 
     static func mime(for ext: String) -> String {
         switch ext.lowercased() {
@@ -38,6 +66,8 @@ final class LocalScheme: NSObject, WKURLSchemeHandler {
         case "json", "webmanifest": return "application/json"
         case "png": return "image/png"
         case "svg": return "image/svg+xml"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "mp4": return "video/mp4"
         default: return "application/octet-stream"
         }
     }

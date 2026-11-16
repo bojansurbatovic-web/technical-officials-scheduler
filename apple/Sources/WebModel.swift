@@ -23,6 +23,11 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
         let config = WKWebViewConfiguration()
         config.setURLSchemeHandler(LocalScheme(), forURLScheme: LocalScheme.scheme)
         config.websiteDataStore = .default()
+        // the silent opening video plays by itself, inside the page
+        config.mediaTypesRequiringUserActionForPlayback = []
+        #if os(iOS)
+        config.allowsInlineMediaPlayback = true
+        #endif
         let controller = WKUserContentController()
         config.userContentController = controller
         webView = WKWebView(frame: .zero, configuration: config)
@@ -101,6 +106,12 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
                 if selfCheck {
                     webView.evaluateJavaScript("document.querySelectorAll('*').length + ' elements | ' + document.title + ' | ' + (document.body.innerText || '').replace(/\\s+/g, ' ').slice(0, 160)") { value, error in
                         Self.report("READY \(value ?? error?.localizedDescription ?? "")")
+                    }
+                    // the opening animation: is its video playing?
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                        self?.webView.evaluateJavaScript("(function(){var v=document.querySelector('.tos-splash video');return v?('video ready='+v.readyState+' time='+v.currentTime.toFixed(2)+' paused='+v.paused+' error='+(v.error?v.error.code:'none')):'no splash';})()") { value, error in
+                            Self.report("SPLASH \(value ?? error?.localizedDescription ?? "")")
+                        }
                     }
                 }
             case "list":

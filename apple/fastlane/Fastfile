@@ -34,6 +34,27 @@ def signing_args(profile_name)
   "PROVISIONING_PROFILE_SPECIFIER='#{profile_name}'"
 end
 
+# Take a version out of the review queue (before or during review) and give it the version number of the
+# new build (APP_VERSION), so the new build can be attached and sent instead.
+def withdraw_version(p)
+  asc_key
+  app = Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  subs = app.get_review_submissions(filter: { platform: store_platform(p) }, includes: "items") rescue []
+  subs.select { |x| %w[WAITING_FOR_REVIEW IN_REVIEW].include?(x.state) }.each do |x|
+    x.cancel_submission
+    UI.success("Withdrew the #{p} review submission #{x.id} (was #{x.state})")
+  end
+  v = nil
+  18.times { v = version_for(app, p); break if v; sleep 10 }
+  UI.user_error!("No editable #{p} version after withdrawing") unless v
+  want = ENV["APP_VERSION"].to_s
+  if !want.empty? && v.version_string != want
+    old = v.version_string
+    v.update(attributes: { version_string: want })
+    UI.success("#{p} version #{old} renamed to #{want}")
+  end
+end
+
 platform :ios do
   desc "Build the iPhone / iPad app and upload it to TestFlight"
   lane :beta do
@@ -340,6 +361,7 @@ platform :ios do
   lane(:listing) { upload_listing("ios") }
   lane(:review_info) { update_review_info("ios") }
   lane(:submit) { submit_version("ios") }
+  lane(:withdraw) { withdraw_version("ios") }
   desc "Print what App Store Connect has: versions, languages, screenshots, builds"
   lane(:status) { report_status }
 end
@@ -419,4 +441,5 @@ platform :mac do
 
   lane(:review_info) { update_review_info("mac") }
   lane(:submit) { submit_version("mac") }
+  lane(:withdraw) { withdraw_version("mac") }
 end

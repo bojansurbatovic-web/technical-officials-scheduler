@@ -1134,7 +1134,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     A.auto = Store.getPref('auto', '1') !== '0';
     window.addEventListener('pagehide', function () { saveNow(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) saveNow(); });
-    Store.init().then(function () {
+    return Store.init().then(function () {
       document.documentElement.setAttribute('data-platform', Store.platform);
       return Store.list();
     }).then(function (lib) {
