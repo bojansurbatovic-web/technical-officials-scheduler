@@ -19,7 +19,7 @@
 html { background: #080d17; }
 body { background: transparent; }
 .bgv { position: fixed; inset: 0; z-index: -2; overflow: hidden; background: #080d17; }
-.bgv video, .bgv img { width: 100%; height: 100%; object-fit: cover; object-position: 50% var(--focus, 50%); display: block; }
+.bgv video, .bgv img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; }
 .bgv-shade { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: rgba(8,13,23,var(--shade, .72)); transition: background .3s ease; }
 .section--alt { background: rgba(13,20,34,.55); }
 .footer { background: rgba(6,10,18,.88); }
@@ -37,8 +37,8 @@ body { background: transparent; }
 </head>
 <body>
 <div class="bgv" aria-hidden="true">
-  <video id="bgv" autoplay muted loop playsinline preload="auto" poster="assets/video/trisport-bg-poster.jpg">
-    <source src="assets/video/trisport-bg.mp4" type="video/mp4">
+  <video id="bgv" autoplay muted loop playsinline preload="auto" poster="assets/video/trisport-bg-sequence-poster.jpg">
+    <source src="assets/video/trisport-bg-sequence.mp4" type="video/mp4">
   </video>
 </div>
 <div class="bgv-shade" aria-hidden="true"></div>
@@ -47,8 +47,6 @@ body { background: transparent; }
   <b>Preview: video background</b>
   <div class="pv-row"><span>Darkness</span>
     <button data-shade=".55">Light</button><button data-shade=".72" aria-pressed="true">Medium</button><button data-shade=".85">Strong</button></div>
-  <div class="pv-row"><span>Focus</span>
-    <button data-focus="0%">Run</button><button data-focus="50%" aria-pressed="true">Bike</button><button data-focus="100%">Swim</button></div>
   <div class="pv-row"><span>Video</span>
     <button data-play="on" aria-pressed="true">On</button><button data-play="off">Off</button></div>
 </div>
@@ -488,7 +486,6 @@ body { background: transparent; }
   function group(attr, fn){ var bs=document.querySelectorAll('[data-'+attr+']');
     bs.forEach(function(b){ b.addEventListener('click', function(){ bs.forEach(function(x){x.setAttribute('aria-pressed', x===b?'true':'false');}); fn(b.getAttribute('data-'+attr)); }); }); }
   group('shade', function(s){ root.style.setProperty('--shade', s); });
-  group('focus', function(f){ root.style.setProperty('--focus', f); });
   group('play', function(p){ if(p==='on'){ v.style.visibility='visible'; v.play && v.play().catch(function(){}); } else { v.pause(); v.style.visibility='hidden'; } });
   var pv=document.getElementById('pv'), mini=document.getElementById('pv-min');
   document.getElementById('pv-x').addEventListener('click', function(){ pv.style.display='none'; mini.style.display='inline-flex'; });
