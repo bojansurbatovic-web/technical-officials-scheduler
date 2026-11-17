@@ -129,7 +129,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .hero .wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); gap: 64px; align-items: center; }
 .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .eyebrow::before { content: ""; width: 26px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--swim), var(--bike), var(--run)); }
-.hero h1 { font-size: clamp(2.1rem, 4.4vw, 3.4rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; margin-top: 22px; }
+.hero h1 { font-size: clamp(2.5rem, 5.4vw, 4.15rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.02; margin-top: 22px; }
 .hero h1 em { font-style: normal; background: linear-gradient(95deg, var(--swim) 5%, var(--bike) 52%, var(--run) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .lede { margin-top: 24px; font-size: 1.14rem; line-height: 1.62; color: var(--fg-soft); max-width: 34em; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
@@ -451,6 +451,3 @@ body.has-bgv { background: transparent; }
 .bgv-shade { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: rgba(8,13,23,.72); }
 .has-bgv .section--alt { background: rgba(13,20,34,.55); }
 .has-bgv .footer { background: rgba(6,10,18,.88); }
-
-/* Home page intro sentence: tighter line spacing */
-.hero .lede { line-height: 1.45; }
