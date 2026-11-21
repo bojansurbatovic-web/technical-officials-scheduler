@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version (e.g. 1.0.1)
-        default: "1.0.1"
+        description: Version (e.g. 1.0.3)
+        default: "1.0.3"
       release:
         description: Publish the installers as a GitHub release
         type: boolean
@@ -30,7 +30,7 @@ permissions:
   contents: write
 
 env:
-  APP_VERSION: ${{ inputs.version || '1.0.1' }}
+  APP_VERSION: ${{ inputs.version || '1.0.3' }}
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
   DOTNET_NOLOGO: "1"
 

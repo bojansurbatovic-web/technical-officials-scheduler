@@ -119,6 +119,130 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     return h ? h + ':' + pad2(m) + ':' + pad2(s) : m + ':' + pad2(s);
   };
 
+  // ------------------------------------------------------------ sun and tides
+  // Sunrise / sunset from the venue's coordinates (NOAA solar calculator, accurate to about a minute; works offline).
+  function rad(d) { return d * Math.PI / 180; }
+  function deg(r) { return r * 180 / Math.PI; }
+  function jdOf(y, m, d) {
+    if (m <= 2) { y -= 1; m += 12; }
+    var a = Math.floor(y / 100), b = 2 - a + Math.floor(a / 4);
+    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + b - 1524.5;
+  }
+  function sunAt(t) {
+    var L0 = (280.46646 + t * (36000.76983 + 0.0003032 * t)) % 360;
+    var M = 357.52911 + t * (35999.05029 - 0.0001537 * t);
+    var e = 0.016708634 - t * (0.000042037 + 0.0000001267 * t);
+    var Mr = rad(M);
+    var C = Math.sin(Mr) * (1.914602 - t * (0.004817 + 0.000014 * t)) + Math.sin(2 * Mr) * (0.019993 - 0.000101 * t) + Math.sin(3 * Mr) * 0.000289;
+    var lam = L0 + C - 0.00569 - 0.00478 * Math.sin(rad(125.04 - 1934.136 * t));
+    var eps0 = 23 + (26 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60) / 60;
+    var eps = eps0 + 0.00256 * Math.cos(rad(125.04 - 1934.136 * t));
+    var decl = Math.asin(Math.sin(rad(eps)) * Math.sin(rad(lam)));
+    var y = Math.pow(Math.tan(rad(eps) / 2), 2), L0r = rad(L0);
+    var eqt = 4 * deg(y * Math.sin(2 * L0r) - 2 * e * Math.sin(Mr) + 4 * e * y * Math.sin(Mr) * Math.cos(2 * L0r)
+      - 0.5 * y * y * Math.sin(4 * L0r) - 1.25 * e * e * Math.sin(2 * Mr));
+    return [decl, eqt];
+  }
+  function sunEvent(jd, lat, lon, rise) {
+    var utc = 720;
+    for (var i = 0; i < 2; i++) {
+      var t = (jd + utc / 1440 - 2451545) / 36525, se = sunAt(t), decl = se[0], latr = rad(lat);
+      var c = Math.cos(rad(90.833)) / (Math.cos(latr) * Math.cos(decl)) - Math.tan(latr) * Math.tan(decl);
+      if (c > 1 || c < -1) return null;
+      var ha = deg(Math.acos(c));
+      utc = 720 - 4 * (lon + (rise ? ha : -ha)) - se[1];
+    }
+    return utc;
+  }
+  // [sunrise, sunset] in minutes after local midnight on date iso; offsetMin = local time minus UTC. null in polar day / night.
+  E.sunTimes = function (lat, lon, iso, offsetMin) {
+    var p = iso.split('-').map(Number), jd = jdOf(p[0], p[1], p[2]);
+    var r = sunEvent(jd, lat, lon, true), s = sunEvent(jd, lat, lon, false);
+    if (r === null || s === null) return null;
+    return [r + offsetMin, s + offsetMin];
+  };
+  E.parseCoords = function (text) {
+    var parts = String(text || '').replace(/[;,]/g, ' ').split(/\s+/).filter(Boolean);
+    if (parts.length !== 2) return null;
+    var lat = Number(parts[0]), lon = Number(parts[1]);
+    if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+    return [lat, lon];
+  };
+  E.fmtSpan = function (minutes) {
+    var m = pyRound(Math.abs(minutes));
+    return m >= 60 ? Math.floor(m / 60) + ' h ' + pad2(m % 60) + ' min' : m + ' min';
+  };
+  function ceil5(x) { return Math.ceil(x / 5 - 1e-9) * 5; }
+  function floor5(x) { return Math.floor(x / 5 + 1e-9) * 5; }
+  // minutes from the start to the (estimated) last finisher
+  E.raceDuration = function (race) {
+    var p = race.paces, legs = Math.max(1, pyInt(get(race, 'legs', 1)));
+    var L = num(race.swim_m) / 100 * num(p.swim_pace) + num(p.t1) + num(race.bike_km) / Math.max(1e-6, num(p.bike_speed)) * 60
+      + num(p.t2) + num(race.run_km) * num(p.run_pace);
+    return legs * L * (1 + num(p.gap_finish) / 100);
+  };
+  // where the race may start so that it starts after sunrise and the last finisher is in before sunset
+  E.daylight = function (race) {
+    var planned = E.parseHHMM(race.start, 600);
+    var out = { planned: planned, start: planned, moved: '', ok: true, sunrise: E.parseHHMM(race.sunrise), sunset: E.parseHHMM(race.sunset),
+      earliest: null, latest: null, duration: E.raceDuration(race) };
+    if (!get(race, 'daylight', true) || out.sunrise === null || out.sunset === null) return out;
+    var after = num(get(race, 'daylight_after_sunrise', 15) || 0), before = num(get(race, 'daylight_before_sunset', 15) || 0);
+    var earliest = ceil5(out.sunrise + after), latest = floor5(out.sunset - before - out.duration);
+    out.earliest = earliest; out.latest = latest;
+    if (latest < earliest) {
+      out.ok = false;
+      if (planned < earliest) { out.start = earliest; out.moved = 'sunrise'; }
+      return out;
+    }
+    if (planned < earliest) { out.start = earliest; out.moved = 'sunrise'; }
+    else if (planned > latest) { out.start = latest; out.moved = 'sunset'; }
+    return out;
+  };
+  // the start the plan uses: the planned start, moved into daylight when needed
+  E.raceStart = function (race) { return E.daylight(race).start; };
+  E.daylightNotes = function (ev) {
+    var out = [];
+    E.racesSorted(ev).forEach(function (r) {
+      var d = E.daylight(r);
+      if (d.sunrise === null || d.sunset === null || !get(r, 'daylight', true)) return;
+      var after = pyInt(num(get(r, 'daylight_after_sunrise', 15) || 0)), before = pyInt(num(get(r, 'daylight_before_sunset', 15) || 0));
+      var sr = E.fmtHHMM(d.sunrise), ss = E.fmtHHMM(d.sunset);
+      if (!d.ok) {
+        var avail = d.sunset - before - (d.sunrise + after);
+        out.push(r.name + ': too long for the daylight – about ' + E.fmtSpan(d.duration) + ' from the start to the last finisher, but only ' +
+          E.fmtSpan(Math.max(0, avail)) + ' between sunrise ' + sr + ' (+' + after + ' min) and sunset ' + ss + ' (−' + before + ' min).');
+      } else if (d.moved === 'sunrise') {
+        out.push(r.name + ': start moved from ' + E.fmtHHMM(d.planned) + ' to ' + E.fmtHHMM(d.start) + ' so the race starts after sunrise (' + sr + ' +' + after + ' min).');
+      } else if (d.moved === 'sunset') {
+        out.push(r.name + ': start moved from ' + E.fmtHHMM(d.planned) + ' to ' + E.fmtHHMM(d.start) + ' so the last finisher is in before sunset (' + ss + ' −' + before + ' min).');
+      }
+    });
+    return out;
+  };
+  E.TIDE_KINDS = [['high', 'High water'], ['low', 'Low water']];
+  E.tideList = function (race) {
+    var out = [];
+    (Array.isArray(race.tides) ? race.tides : []).forEach(function (t) {
+      var m = E.parseHHMM((t || {}).time);
+      if (m === null) return;
+      out.push({ kind: (t || {}).kind === 'low' ? 'low' : 'high', time: m, height: String((t || {}).height || '').trim() });
+    });
+    return sortBy(out, function (x) { return [x.time]; });
+  };
+  E.tideAtStart = function (race) {
+    var tides = E.tideList(race);
+    if (!tides.length) return '';
+    var s = E.raceStart(race), nxt = null, prev = null;
+    for (var i = 0; i < tides.length; i++) if (tides[i].time >= s) { nxt = tides[i]; break; }
+    for (var j = tides.length - 1; j >= 0; j--) if (tides[j].time < s) { prev = tides[j]; break; }
+    var rt = nxt || prev, label = (rt.kind === 'low' ? 'Low water' : 'High water').toLowerCase();
+    var h = rt.height ? ' (' + rt.height + ')' : '';
+    var when = rt.time > s ? E.fmtSpan(rt.time - s) + ' after the start' : rt.time === s ? 'at the start' : E.fmtSpan(s - rt.time) + ' before the start';
+    if (nxt && nxt.time > s) return (nxt.kind === 'high' ? 'Rising' : 'Falling') + ' tide at the start: ' + label + ' ' + E.fmtHHMM(rt.time) + h + ', ' + when + '.';
+    return 'Tide at the start: ' + label + ' ' + E.fmtHHMM(rt.time) + h + ', ' + when + '.';
+  };
+
   // ------------------------------------------------------------ model builders
   E.newId = function (prefix) {
     var hex = '';
@@ -140,7 +264,9 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       laps: { swim: laps[0], bike: laps[1], run: laps[2] },
       wheel_stations: cat.draft_legal ? f.wheel_stations : 0,
       aid_stations: f.aid_stations, start_line: f.start_line, draft_legal: cat.draft_legal,
-      paces: paces, schedule: deep(ref.SCHEDULE_DEFAULTS), shifts: {}
+      paces: paces, schedule: deep(ref.SCHEDULE_DEFAULTS), shifts: {},
+      sunrise: '', sunset: '', sun_auto: true, daylight: true, daylight_after_sunrise: 15, daylight_before_sunset: 15,
+      tides: [], tide_notes: ''
     };
   };
   E.applyFormat = function (race, fmt, category) {
@@ -151,14 +277,14 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     return race;
   };
   E.newOfficial = function (name) {
-    return { name: name, country: '', primary: '', max_secondary: 3, available_from: '', available_to: '',
+    return { name: name, country: '', level: '', primary: '', max_secondary: 3, available_from: '', available_to: '',
       radio: true, notes: '', races: {} };
   };
   E.newEvent = function (name, date, races, nOfficials) {
     var ev = {
       app: 'wt-planner', version: 1,
       event: { name: name || 'New event', venue: '', date: date || '', notes: '', td: '', md: '', jury: ['', ''],
-        vcc_base: ref.RADIO_DEFAULTS.vcc_base, spare_pct: ref.RADIO_DEFAULTS.spare_pct },
+        vcc_base: ref.RADIO_DEFAULTS.vcc_base, spare_pct: ref.RADIO_DEFAULTS.spare_pct, location: '', timezone: '' },
       settings: E.dutyDefaults(),
       races: races || [E.newRace()],
       officials: [], positions: {}, assignments: {}, sessions: {}, custom_sessions: []
@@ -183,6 +309,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       });
       if (r.date == null) r.date = '';
       if (!r.shifts || typeof r.shifts !== 'object') r.shifts = {};
+      if (!Array.isArray(r.tides)) r.tides = [];
     });
     ev.officials.forEach(function (o) {
       var t = E.newOfficial('');
@@ -258,7 +385,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     return 20;
   };
   E.raceTimeline = function (race, offset) {
-    var S = E.parseHHMM(race.start, 600) + num(offset || 0);
+    var S = E.raceStart(race) + num(offset || 0);
     var p = race.paces, sch = race.schedule, laps = race.laps;
     var legs = Math.max(1, pyInt(get(race, 'legs', 1)));
     var sw = num(race.swim_m) / 100 * num(p.swim_pace);
@@ -316,7 +443,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
   // ------------------------------------------------------------ meetings & briefings
   function ceil15(m) { return Math.ceil(m / 15) * 15; }
   E.buildSessions = function (ev) {
-    var races = sortBy(ev.races, function (r) { return [E.raceDate(ev, r), E.parseHHMM(r.start, 600)]; });
+    var races = sortBy(ev.races, function (r) { return [E.raceDate(ev, r), E.raceStart(r)]; });
     var out = [];
     if (!races.length) return out;
     var settings = ev.settings || {};
@@ -471,7 +598,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       if (E.raceDate(ev, a) !== E.raceDate(ev, b)) continue;
       var need = ref.START_WINDOWS[a.format];
       if (!need || !ref.CATEGORIES[a.category].draft_legal) continue;
-      var gap = E.parseHHMM(b.start, 0) - E.parseHHMM(a.start, 0);
+      var gap = E.raceStart(b) - E.raceStart(a);
       if (gap < need - 15) {
         warn.push(a.name + ' → ' + b.name + ': ' + Math.trunc(gap) + ' min between starts; EOM 2.10.2 asks for ' +
           need + ' min (minimum ' + (need - 15) + ' min with TD approval).');
@@ -492,7 +619,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
 
   // ------------------------------------------------------------ slots
   E.racesSorted = function (ev) {
-    return sortBy(ev.races, function (r) { return E.raceOffset(ev, r) + E.parseHHMM(r.start, 0); });
+    return sortBy(ev.races, function (r) { return E.raceOffset(ev, r) + E.raceStart(r); });
   };
   E.positionsByPriority = function () {
     return sortBy(Object.keys(ref.POSITION_INDEX), function (k) { return ref.POSITION_INDEX[k].priority; });
@@ -922,7 +1049,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       se.people = wt.concat((namesBy[se.id] || []).slice().sort());
     });
     return { slots: slots, timelines: tls, rows: rows, conflicts: conflicts, fmt: fmt, sessions: sess,
-      wt_officials: wtOfficials, warnings: E.startWindowWarnings(ev), multiday: multi, dates: E.eventDates(ev),
+      wt_officials: wtOfficials, warnings: E.startWindowWarnings(ev), daylight: E.daylightNotes(ev), multiday: multi, dates: E.eventDates(ev),
       officials: officials, radios: radios, unfilled: rows.filter(function (r) { return r.status === 'UNFILLED'; }),
       n_conflict: conflicts.filter(function (c) { return c.level === 'CONFLICT'; }).length,
       n_tight: conflicts.filter(function (c) { return c.level === 'TIGHT'; }).length };

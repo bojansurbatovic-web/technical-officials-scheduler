@@ -57,6 +57,22 @@ def tw2(ev):
     ev.pop("_primary", None)
 mk("locked_rows", [R("standard", "elite_women", "10:00"), R("standard", "elite_men", "12:45")], 18, tweak=tw2)
 
+def tw3(ev):
+    # sunrise / sunset, a start moved after sunrise, one moved before sunset, one too long for the daylight; tides; TO levels
+    r = ev["races"]
+    for x, (sr, ss) in zip(r, [("06:42", "19:10"), ("06:42", "19:10"), ("07:55", "16:20")]):
+        x["sunrise"], x["sunset"] = sr, ss
+    r[1]["daylight_before_sunset"] = 30
+    r[0]["tides"] = [{"kind": "low", "time": "05:10", "height": "0.3 m"}, {"kind": "high", "time": "11:20", "height": "1.4 m"},
+                     {"kind": "low", "time": "17:35", "height": ""}]
+    r[0]["tide_notes"] = "Current along the swim course at high water"
+    r[1]["tides"] = [{"kind": "high", "time": "16:05", "height": "1.2 m"}]
+    for o, lv in zip(ev["officials"], ["1", "2", "3a", "3b", "3c", "", "2"]):
+        o["level"] = lv
+    ev["event"]["location"], ev["event"]["timezone"] = "43.5081, 16.4402", "Europe/Zagreb"
+mk("daylight_and_tides", [R("standard", "elite_women", "06:30"), R("standard", "elite_men", "17:45"),
+                          R("long", "age_group", "06:00", date="2027-06-13")], 20, tweak=tw3)
+
 def summary(ev, res):
     rnd = lambda x: None if x is None else round(x, 6)
     return {
@@ -66,7 +82,7 @@ def summary(ev, res):
         "sessions": [[s["id"], s["date"].isoformat(), rnd(s["start"]), rnd(s["end"]), s["enabled"], s["people"], s["name"], rnd(s["s"])] for s in res["sessions"]],
         "officials": [[o["name"], o["primary"], o["secondary"], o["conflicts"], len(o["duties"]), rnd(o["busy_min"]), o["races"]] for o in res["officials"]],
         "wt": [[w["name"], len(w["duties"]), w["conflicts"]] for w in res["wt_officials"]],
-        "radios": res["radios"], "warnings": res["warnings"], "dates": [d.isoformat() for d in res["dates"]],
+        "radios": res["radios"], "warnings": res["warnings"], "daylight": res["daylight"], "dates": [d.isoformat() for d in res["dates"]],
         "multiday": res["multiday"], "n_conflict": res["n_conflict"], "n_tight": res["n_tight"],
         "timelines": {k: {m: rnd(v) for m, v in tl.items() if m != "_segments"} for k, tl in res["timelines"].items()},
         "fmt": [res["fmt"](m) for m in (0, 599.5, 1439.99, 1500.25, 3000)],

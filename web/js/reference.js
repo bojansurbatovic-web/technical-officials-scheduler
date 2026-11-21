@@ -2365,12 +2365,34 @@ WTP.ref = {
   "mixed_relay": 150
  },
  "REFERENCES": "References used for all default values\n• World Triathlon Competition Rules (13 Dec 2025): distances (Appendix A), start procedure (4.5, 4.7),\n  water temperature 1 h before start (4.2 e), Elite penalties served at run penalty box (3.3 b, 3.5 e),\n  lapped athletes (5.4), wheel stations (5.9), bike penalty boxes one per 10 km / 30 km (10.8 b),\n  Technical Officials and Competition Jury (11.2, 12.6).\n• World Triathlon Technical Officials' Checklist 2025: pre-event, event and post-event duties of every\n  position (sections 1–24), assistant numbers, radio protocol (21).\n• Briefings: Elite athletes' briefing at 16:00 the day before the first competition day; other categories the day\n  before their first race; coaches' meeting 1 h before (CR 2.7 b). Jury meets after the briefing, 1 h before each\n  start and after the last finisher (CR 12.9). Protest windows after results: Elite standard/shorter 5 + 15 min,\n  middle/long and Age-Group 15 + 30 min (CR 12.4).\n• ITU Event Organisers' Manual 2019 (Masterfile): race-week meetings (Table 14: TOs' meeting, start and finish\n  rehearsals, motorbike & boat drivers' briefing, timing, medical, TV), swim and bike familiarisation (3.2.8),\n  TO briefings and de-briefings on competition days (2.13), minimum time between Elite starts (2.10.2 Table 3),\n  back-to-back race schedule example (lounge −75/−30 min,\n  transition −60/−15 min, introduction −10 min), lap guidance, TO motorbikes (3.4.3), penalty box (4.13),\n  radio talk groups (6.6.2: TO group min. 12 radios + 1 VCC radio), TO equipment list (25 radios).\n• Typical Elite split times are not in these documents: they are editable defaults.\n",
+ "TO_LEVELS": [
+  [
+   "1",
+   "Level 1"
+  ],
+  [
+   "2",
+   "Level 2"
+  ],
+  [
+   "3a",
+   "Level 3a"
+  ],
+  [
+   "3b",
+   "Level 3b"
+  ],
+  [
+   "3c",
+   "Level 3c"
+  ]
+ ],
  "NON_BLOCKING": [
   "race_presence"
  ]
 };
 WTP.ref.APP_NAME = 'Technical Officials Scheduler';
 WTP.ref.APP_SHORT = 'TO Scheduler';
-WTP.ref.APP_VERSION = '1.0.2';
+WTP.ref.APP_VERSION = '1.0.3';
 WTP.ref.FILE_SUFFIX = '.wtplan.json';
 if (typeof module !== 'undefined') module.exports = WTP;

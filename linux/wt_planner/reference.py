@@ -11,7 +11,7 @@ values for World Triathlon racing and are fully editable.
 
 APP_ID = "org.wtplanner.WTPlanner"
 APP_NAME = "Technical Officials Scheduler"
-APP_VERSION = "1.4.1"
+APP_VERSION = "1.5.0"
 FILE_SUFFIX = ".wtplan.json"
 MIME_TYPE = "application/x-wtplan+json"
 
@@ -256,6 +256,9 @@ POSITION_FIELDS = ["key", "title", "toc", "kind", "activities", "count", "applie
 POSITION_INDEX = {p[0]: dict(zip(POSITION_FIELDS, p)) for p in POSITIONS}
 
 RADIO_DEFAULTS = {"vcc_base": 1, "spare_pct": 10}
+
+# Technical Official certification levels (value stored in the plan file, label shown)
+TO_LEVELS = [["1", "Level 1"], ["2", "Level 2"], ["3a", "Level 3a"], ["3b", "Level 3b"], ["3c", "Level 3c"]]
 
 # --------------------------------------------------------------------------
 # Meetings, briefings, rehearsals and familiarisations (obligations outside the race)

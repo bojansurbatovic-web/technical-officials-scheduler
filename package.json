@@ -7,7 +7,7 @@
   "scripts": {
     "test": "node tests/test_engine.js && node tests/test_exporters.js && node tests/test_athletes.js",
     "serve": "python3 -m http.server 8765 --directory web",
-    "test:ui": "node tests/ui_smoke.js && node tests/native_bridge.js && node tests/windows_bridge.js && node tests/splash.js"
+    "test:ui": "node tests/ui_smoke.js && node tests/native_bridge.js && node tests/windows_bridge.js && node tests/splash.js && node tests/daylight_ui.js"
   },
   "devDependencies": {
     "playwright": "1.63.0"

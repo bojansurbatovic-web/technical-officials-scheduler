@@ -13,6 +13,22 @@ STATUS_COLOURS = {"OK": "#C6EFCE", "TIGHT": "#FFEB9C", "CONFLICT": "#FFC7CE", "U
                   "LOC / volunteer": "#DDEBF7"}
 
 
+
+def level_label(v):
+    """TO certification level value -> label ("3a" -> "Level 3a")."""
+    return next((lab for val, lab in ref.TO_LEVELS if val == v), "")
+
+
+def sun_cells(r):
+    """Planned start (when moved), sunrise, sunset, daylight state and tide at the start of a race."""
+    d = E.daylight(r)
+    known = d["sunrise"] is not None and d["sunset"] is not None
+    state = ("" if not known or r.get("daylight") is False else "Too long for the daylight" if not d["ok"] else
+             "Start moved to after sunrise" if d["moved"] == "sunrise" else
+             "Start moved so the race ends before sunset" if d["moved"] == "sunset" else "In daylight")
+    return [E.fmt_hhmm(d["planned"]) if d["moved"] else "", "" if d["sunrise"] is None else E.fmt_hhmm(d["sunrise"]),
+            "" if d["sunset"] is None else E.fmt_hhmm(d["sunset"]), state, E.tide_at_start(r)]
+
 def _lighten(hexcol, f=0.55):
     h = hexcol.lstrip("#")
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
@@ -51,13 +67,13 @@ def build_tables(ev, result=None):
     sheets.append(("Assignments", rows, [40, 26, 24, 11, tw, tw, 14, 8, 18], styles))
 
     # --- Officials (one row per person)
-    rows = [["Name and surname", "Country", "Primary position", "Secondary position(s)", "Busy (h)", "Radio", "Conflicts"]]
+    rows = [["Name and surname", "Country", "Primary position", "Secondary position(s)", "Busy (h)", "Radio", "Conflicts", "TO level"]]
     styles = {}
     offmap = {o["name"]: o for o in ev["officials"]}
     for o in res["officials"]:
         rows.append([o["name"], o["country"], o["primary"] or "—", "; ".join(o["secondary"]) or "—",
                      round(o["busy_min"] / 60.0, 1), "yes" if offmap.get(o["name"], {}).get("radio", True) else "no",
-                     o["conflicts"]])
+                     o["conflicts"], level_label(offmap.get(o["name"], {}).get("level", ""))])
         if o["conflicts"]:
             styles[(len(rows) - 1, 6)] = "st_CONFLICT"
     rows.append([])
@@ -76,7 +92,7 @@ def build_tables(ev, result=None):
     rows.append(["Spares", rd["spare"], f"{e.get('spare_pct', 10)} % rounded up", "", "", "", ""])
     rows.append(["TOTAL", rd["total"], "EOM: min. 12, TO equipment list 25", "", "", "", ""])
     styles[(len(rows) - 1, 0)] = "bold"
-    sheets.append(("Officials", rows, [30, 10, 34, 60, 9, 7, 10], styles))
+    sheets.append(("Officials", rows, [30, 10, 34, 60, 9, 7, 10, 10], styles))
 
     # --- Participation (who works which race)
     races = E.races_sorted(ev)
@@ -109,15 +125,16 @@ def build_tables(ev, result=None):
         if m["key"] == "start":
             styles[(len(rows) - 1, 2)] = "bold"
     rows.append([])
-    rows.append(["Race", "Format", "Category", "Start", "Swim", "T1", "Bike", "T2", "Run", "Winner", "Last finisher"])
-    styles.update({(len(rows) - 1, c): "header" for c in range(11)})
+    rows.append(["Race", "Format", "Category", "Start", "Swim", "T1", "Bike", "T2", "Run", "Winner", "Last finisher",
+                 "Planned start", "Sunrise", "Sunset", "Daylight", "Tide at the start"])
+    styles.update({(len(rows) - 1, c): "header" for c in range(16)})
     for r in E.races_sorted(ev):
         tl = res["timelines"][r["id"]]
         sg = tl["_segments"]
         rows.append([r["name"], ref.FORMATS[r["format"]]["label"], ref.CATEGORIES[r["category"]]["label"], fmt(tl["start"]),
                      E.fmt_dur(sg["swim"]), E.fmt_dur(sg["t1"]), E.fmt_dur(sg["bike"]), E.fmt_dur(sg["t2"]),
-                     E.fmt_dur(sg["run"]), fmt(tl["winner"]), fmt(tl["last_finisher"])])
-    sheets.append(("Race timeline", rows, [26, 34, 26, tw, 8, 7, 8, 7, 8, tw, 14], styles))
+                     E.fmt_dur(sg["run"]), fmt(tl["winner"]), fmt(tl["last_finisher"])] + sun_cells(r))
+    sheets.append(("Race timeline", rows, [26, 34, 26, tw, 8, 7, 8, 7, 8, tw, 14, 12, 9, 9, 34, 60], styles))
 
     # --- Meetings & briefings (rule-based obligations)
     rows = [["Date", "From", "To", "Meeting / briefing", "Who must attend", "People", "Rule / reference", "In plan"]]

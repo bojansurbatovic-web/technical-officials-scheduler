@@ -1,7 +1,7 @@
 name: technical-officials-scheduler
 title: Technical Officials Scheduler
 base: core24
-version: '1.4.1'
+version: '1.5.0'
 summary: Plan Technical Officials, meetings and athletes' guides for triathlon
 description: |
   Technical Officials Scheduler plans the Technical Officials (referees) of
@@ -20,6 +20,9 @@ description: |
   * Personal schedules, a Gantt chart per day, a race timeline and radio count
   * Athletes' guide: only what athletes need – briefing, familiarisation and
     race-day times, course and key rules – saved as a page or calendar
+  * Daylight: sunrise and sunset from the venue's location; starts before
+    sunrise or finishes after sunset are moved automatically
+  * Tides on race day and each official's TO certification level
   * Export to Excel, LibreOffice, iCalendar and SVG; plan files open on
     iPhone, iPad, Mac and the web version too
 
@@ -56,6 +59,7 @@ parts:
     plugin: nil
     stage-packages:
       - python3-gi
+      - tzdata          # named time zones for sunrise / sunset (Python zoneinfo)
   launcher:
     plugin: dump
     source: snap/local

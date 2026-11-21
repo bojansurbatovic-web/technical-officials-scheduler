@@ -20,7 +20,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     { id: 'plan', label: 'Plan', icon: 'check', sections: [['assignments', 'Assignments'], ['conflicts', 'Conflicts']] },
     { id: 'views', label: 'Views', icon: 'chart', sections: [['schedules', 'Personal schedules'], ['gantt', 'Gantt'], ['timeline', 'Timeline']] },
     { id: 'athletes', label: 'Athletes', icon: 'runner', sections: [['athletes', 'Athletes’ guide']] },
-    { id: 'more', label: 'More', icon: 'more', sections: [['export', 'Export & share'], ['trisport', 'TriSport.me'], ['references', 'Rules & references'], ['about', 'About & privacy']] }
+    { id: 'more', label: 'More', icon: 'more', sections: [['whatsnew', 'What’s new'], ['export', 'Export & share'], ['trisport', 'TriSport.me'], ['references', 'Rules & references'], ['about', 'About & privacy']] }
   ];
   var ICONS = {
     calendar: 'M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 8h14v10H5V10z',
@@ -162,7 +162,33 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
   }
 
   // ============================================================ state, undo, saving
-  function recompute() { A.res = E.evaluate(A.ev); }
+  // ------------------------------------------------------------ sunrise / sunset from the venue's coordinates
+  function deviceZone() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } }
+  // local time minus UTC (minutes) at noon of date iso in time zone tz; null for an unknown zone
+  function zoneOffset(tz, iso) {
+    try {
+      var p = iso.split('-').map(Number), t = Date.UTC(p[0], p[1] - 1, p[2], 12, 0, 0), o = {};
+      new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(t)).forEach(function (x) { o[x.type] = x.value; });
+      return Math.round((Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour % 24, +o.minute, +o.second) - t) / 60000);
+    } catch (e) { return null; }
+  }
+  function zoneList() { try { return Intl.supportedValuesOf('timeZone'); } catch (e) { return []; } }
+  // fill in sunrise and sunset of every race that follows the venue (sun_auto)
+  function refreshSun(ev) {
+    var c = E.parseCoords(ev.event.location), tz = ev.event.timezone || deviceZone();
+    if (!c || !tz) return;
+    ev.races.forEach(function (r) {
+      if (r.sun_auto === false) return;
+      var iso = E.raceDate(ev, r), off = zoneOffset(tz, iso);
+      if (off === null || !E.parseDate(iso)) return;
+      var st = E.sunTimes(c[0], c[1], iso, off);
+      r.sunrise = st ? E.fmtHHMM(Math.round(st[0])) : '';
+      r.sunset = st ? E.fmtHHMM(Math.round(st[1])) : '';
+    });
+  }
+  A.refreshSun = refreshSun;
+  function recompute() { refreshSun(A.ev); A.res = E.evaluate(A.ev); }
   function snapshot() { return JSON.stringify(A.ev); }
   function edit(fn, opts) {
     opts = opts || {};
@@ -423,6 +449,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         field('Venue', input('ev-venue', e.venue, set('venue'))),
         field('Event date', input('ev-date', e.date, function (v) { edit(function () { e.date = v; }); }, { type: 'date' }), 'Used for races without their own date'),
         field('Notes', h('textarea', { 'data-k': 'ev-notes', rows: 4, on: { change: function (ev) { var v = ev.target.value; edit(function () { e.notes = v; }, { noPlan: true }); } } }, e.notes || ''), null, 'span2'))),
+      card('Sunrise and sunset', venueSun()),
       card('World Triathlon officials', h('div', { class: 'form-grid' },
         field('Technical Delegate', input('ev-td', e.td, set('td'), { placeholder: 'Name (optional)' }), 'Chairs the Competition Jury (CR 12.6)'),
         field('Medical Delegate', input('ev-md', e.md, set('md'), { placeholder: 'Name (optional)' })),
@@ -434,6 +461,34 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         radiosTable())),
       card('Races at a glance', raceOverview())));
   };
+  function venueSun() {
+    var e = A.ev.event, c = E.parseCoords(e.location), dz = deviceZone();
+    var box = h('div', { class: 'stack' },
+      h('div', { class: 'form-grid' },
+        field('Venue coordinates', input('ev-loc', e.location, function (v) {
+          v = v.trim(); if (v && !E.parseCoords(v)) return toast('Coordinates as latitude, longitude – e.g. 43.5081, 16.4402');
+          edit(function () { e.location = v; });
+        }, { placeholder: 'e.g. 43.5081, 16.4402', autocap: 'none' }), 'Latitude, longitude of the swim start – copy them from a map app'),
+        field('Time zone', input('ev-tz', e.timezone, function (v) {
+          v = v.trim(); if (v && zoneOffset(v, E.baseDate(A.ev)) === null) return toast('Unknown time zone – e.g. Europe/Zagreb');
+          edit(function () { e.timezone = v; });
+        }, { placeholder: dz || 'e.g. Europe/Zagreb', list: 'tz-list', autocap: 'none' }), 'Of the venue. Empty = this device’s' + (dz ? ' (' + dz + ')' : ''))),
+      h('datalist', { id: 'tz-list' }, zoneList().map(function (z) { return h('option', { value: z }); })));
+    if (e.location && !c) box.appendChild(note('⚠ Coordinates not recognised.', 'warn'));
+    if (!c) box.appendChild(note('Add the venue’s coordinates to fill in sunrise and sunset for every race – or type them on the Races page. Races then stay in daylight.', 'small'));
+    var rs = E.racesSorted(A.ev).filter(function (r) { return r.sunrise || r.sunset; });
+    if (rs.length) box.appendChild(h('table', { class: 'tbl compact' },
+      h('thead', null, h('tr', null, ['Race', 'Day', 'Sunrise', 'Sunset'].map(function (t) { return h('th', { text: t }); }))),
+      h('tbody', null, rs.map(function (r) {
+        return h('tr', null, h('td', { text: r.name + (r.sun_auto === false ? ' (typed in)' : '') }), h('td', { text: longDate(E.raceDate(A.ev, r)) }),
+          h('td', { class: 'num', text: r.sunrise || '—' }), h('td', { class: 'num', text: r.sunset || '—' }));
+      }))));
+    else if (c) box.appendChild(note('The sun does not rise or set on the race day at this place – no daylight limits.', 'small'));
+    return box;
+  }
+  function daylightNotes(root) {
+    (A.res.daylight || []).forEach(function (w) { root.appendChild(note((/too long/.test(w) ? '⚠ ' : '☀ ') + w, /too long/.test(w) ? 'warn' : 'info')); });
+  }
   function radiosTable() {
     var r = A.res.radios;
     return h('table', { class: 'tbl compact' }, h('tbody', null,
@@ -449,6 +504,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         h('div', null, h('strong', { text: r.name }), h('div', { class: 'muted small', text: fmtT(tl.start) + ' start · winner ≈ ' + hm(tl.winner) + ' · last finisher ≈ ' + hm(tl.last_finisher) }))));
     });
     A.res.warnings.forEach(function (w) { box.appendChild(note('⚠ ' + w, 'warn')); });
+    daylightNotes(box);
     box.appendChild(btn('Edit races', function () { go('races'); }, 'small'));
     return box;
   }
@@ -469,6 +525,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         toast('Race added on ' + longDate(sl.date) + ' at ' + sl.start);
       }, 'primary', 'plus')]));
     A.res.warnings.forEach(function (w) { root.appendChild(note('⚠ ' + w, 'warn')); });
+    daylightNotes(root);
     var wrap = h('div', { class: 'cards' });
     E.racesSorted(A.ev).forEach(function (r) { wrap.appendChild(raceCard(r)); });
     if (!A.ev.races.length) wrap.appendChild(empty('No races yet – add one.'));
@@ -485,11 +542,12 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         }, { noPlan: plan === false });
       };
     }
-    var dateVal = E.raceDate(A.ev, r);
+    var dateVal = E.raceDate(A.ev, r), dl = E.daylight(r);
     var main = h('div', { class: 'form-grid' },
       field('Name', input(k + 'name', r.name, set('name', false)), null, 'span2'),
       field('Date', input(k + 'date', dateVal, function (v) { if (!E.parseDate(v)) return toast('Choose a date'); set('date')(v); }, { type: 'date' })),
-      field('Start', input(k + 'start', r.start, function (v) { if (E.parseHHMM(v) === null) return toast('Time as HH:MM'); set('start')(E.fmtHHMM(E.parseHHMM(v))); }, { type: 'time' })),
+      field('Start', input(k + 'start', r.start, function (v) { if (E.parseHHMM(v) === null) return toast('Time as HH:MM'); set('start')(E.fmtHHMM(E.parseHHMM(v))); }, { type: 'time' }),
+        dl.moved ? 'The plan uses ' + E.fmtHHMM(dl.start) + ' (daylight)' : null),
       field('Format', select(k + 'fmt', ref.FORMAT_ORDER.map(function (x) { return [x, ref.FORMATS[x].label]; }), r.format, function (v) {
         edit(function () { var wasAuto = r.name === autoName(r); E.applyFormat(r, v, r.category); if (wasAuto) r.name = autoName(r); });
       }), null, 'span2'),
@@ -525,7 +583,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     var summary = h('div', { class: 'race-sum' },
       ['Swim ' + E.fmtDur(sg.swim), 'T1 ' + E.fmtDur(sg.t1), 'Bike ' + E.fmtDur(sg.bike), 'T2 ' + E.fmtDur(sg.t2), 'Run ' + E.fmtDur(sg.run)].map(function (t) { return h('span', { text: t }); }),
       h('span', { class: 'strong', text: 'Winner ≈ ' + hm(tl.winner) }), h('span', { text: 'Last finisher ≈ ' + hm(tl.last_finisher) }));
-    var c = card(null, h('div', { class: 'stack' }, main, summary, h('details', { class: 'adv' }, h('summary', { text: 'Course, laps and stations' }), course), adv), null, 'race-card');
+    var c = card(null, h('div', { class: 'stack' }, main, summary, daylightBox(r, dl, k, set), h('details', { class: 'adv' }, h('summary', { text: 'Course, laps and stations' }), course), adv), null, 'race-card');
     c.style.setProperty('--race', X.raceColour(A.ev, r.id));
     c.insertBefore(h('div', { class: 'card-head' }, h('h3', null, h('i', { class: 'swatch', style: 'background:' + X.raceColour(A.ev, r.id) }), r.name),
       h('div', { class: 'row-btns' },
@@ -540,6 +598,55 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         }, 'icon danger-text', 'trash', 'Delete race'))), c.firstChild);
     var hb = c.querySelectorAll('.card-head .icon.small'); hb[0].textContent = '−1 day'; hb[1].textContent = '+1 day';
     return c;
+  }
+
+  function daylightBox(r, d, k, set) {
+    var hasVenue = !!E.parseCoords(A.ev.event.location);
+    function setSun(key) {
+      return function (v) {
+        if (v !== '' && E.parseHHMM(v) === null) return toast('Time as HH:MM');
+        edit(function () { r[key] = v === '' ? '' : E.fmtHHMM(E.parseHHMM(v)); r.sun_auto = false; });
+      };
+    }
+    var status;
+    if (d.sunrise === null || d.sunset === null) status = note('Enter sunrise and sunset' + (hasVenue ? '' : ' – or add the venue’s coordinates on the Event page') + ' to keep this race in daylight.', 'small');
+    else if (r.daylight === false) status = note('The daylight check is off for this race.', 'small');
+    else if (!d.ok) status = note('⚠ Too long for the daylight: about ' + E.fmtSpan(d.duration) + ' from the start to the last finisher.', 'warn');
+    else if (d.moved) status = note('☀ Planned ' + E.fmtHHMM(d.planned) + ' – the plan uses ' + E.fmtHHMM(d.start) +
+      (d.moved === 'sunrise' ? ', so the race starts after sunrise.' : ', so the last finisher is in before sunset.'), 'info');
+    else status = note('☀ In daylight. Starts between ' + E.fmtHHMM(d.earliest) + ' and ' + E.fmtHHMM(d.latest) + ' keep it so.', 'small');
+    var tides = Array.isArray(r.tides) ? r.tides : [];
+    var tideRows = h('div', { class: 'stack' }, tides.map(function (t, i) {
+      return h('div', { class: 'inline tide-row' },
+        select(k + 'tk' + i, E.TIDE_KINDS, t.kind === 'low' ? 'low' : 'high', function (v) { edit(function () { t.kind = v; }, { noPlan: true }); }, { aria: 'High or low water' }),
+        input(k + 'tt' + i, t.time, function (v) { if (E.parseHHMM(v) === null) return toast('Time as HH:MM'); edit(function () { t.time = E.fmtHHMM(E.parseHHMM(v)); }, { noPlan: true }); }, { type: 'time', aria: 'Time' }),
+        input(k + 'th' + i, t.height, function (v) { edit(function () { t.height = v.trim(); }, { noPlan: true }); }, { placeholder: 'Height, e.g. 1.3 m', aria: 'Height', cls: 'short' }),
+        btn('', function () { edit(function () { r.tides.splice(i, 1); }, { noPlan: true }); }, 'icon danger-text', 'trash', 'Remove'));
+    }));
+    var tat = E.tideAtStart(r);
+    return h('details', { class: 'adv', open: d.moved || !d.ok ? true : null },
+      h('summary', { text: 'Daylight and tides' + (d.moved ? ' · start moved to ' + E.fmtHHMM(d.start) : !d.ok ? ' · too long for the daylight' : '') }),
+      h('div', { class: 'stack' },
+        h('div', { class: 'form-grid g4' },
+          field('Sunrise', input(k + 'sunr', r.sunrise, setSun('sunrise'), { type: 'time' }), r.sun_auto !== false && hasVenue ? 'from the venue' : null),
+          field('Sunset', input(k + 'suns', r.sunset, setSun('sunset'), { type: 'time' }), r.sun_auto !== false && hasVenue ? 'from the venue' : null),
+          field('Start after sunrise + (min)', numIn(k + 'dla', r.daylight_after_sunrise, function (v) { set('daylight_after_sunrise')(Math.max(0, Math.round(v))); }, { min: 0, step: 5, inputmode: 'numeric' })),
+          field('Last finisher before sunset − (min)', numIn(k + 'dlb', r.daylight_before_sunset, function (v) { set('daylight_before_sunset')(Math.max(0, Math.round(v))); }, { min: 0, step: 5, inputmode: 'numeric' }))),
+        h('div', { class: 'inline wrap' }, check(k + 'dlon', r.daylight !== false, set('daylight'), 'Keep the race in daylight (moves the start when needed)'),
+          r.sun_auto === false && hasVenue ? btn('Use the venue’s sunrise and sunset', function () { edit(function () { r.sun_auto = true; }); }, 'small') : null),
+        status,
+        h('span', { class: 'flabel', text: 'Tides on race day' }),
+        tideRows,
+        btn('Add high or low water', function () {
+          edit(function () {
+            if (!Array.isArray(r.tides)) r.tides = [];
+            var last = r.tides[r.tides.length - 1];
+            r.tides.push({ kind: last && last.kind === 'high' ? 'low' : 'high', time: r.start || '10:00', height: '' });
+          }, { noPlan: true });
+        }, 'small tide-add', 'plus'),
+        tat ? note(tat, 'small') : null,
+        field('Water notes for athletes', h('textarea', { 'data-k': k + 'tn', rows: 2, placeholder: 'e.g. current along the swim course at high water',
+          on: { change: function (ev2) { var v = ev2.target.value; edit(function () { r.tide_notes = v; }, { noPlan: true }); } } }, r.tide_notes || ''))));
   }
 
   // ============================================================ Setup: officials
@@ -578,7 +685,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       btn('Paste names…', pasteNames)]));
     var popts = primaryOptions(), names = {};
     var list = h('div', { class: 'list officials-list' });
-    list.appendChild(h('div', { class: 'list-head off-row' }, ['Name', 'Country', 'Preferred position', 'Max. short jobs / day', 'Available from', 'Available to', 'Radio', ''].map(function (t) { return h('span', { text: t }); })));
+    list.appendChild(h('div', { class: 'list-head off-row' }, ['Name', 'Country', 'Level', 'Preferred position', 'Max. short jobs / day', 'Available from', 'Available to', 'Radio', ''].map(function (t) { return h('span', { text: t }); })));
     offs.forEach(function (o, i) {
       var dup = names[o.name]; names[o.name] = 1;
       var resO = A.res.officials[i] || {};
@@ -589,6 +696,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
           var old = o.name; edit(function () { o.name = v; renameOfficial(old, v); });
         }, { autocap: 'words' }), resO.primary ? '→ ' + resO.primary + (resO.secondary && resO.secondary.length ? ' + ' + resO.secondary.length + ' short' : '') : (o.name ? 'no job yet' : '')),
         field('Country', input('o' + i + 'cty', o.country, function (v) { edit(function () { o.country = v.toUpperCase(); }, { noPlan: true }); }, { placeholder: 'e.g. CRO', autocap: 'characters', cls: 'short' })),
+        field('Level', select('o' + i + 'lvl', [['', '—']].concat(ref.TO_LEVELS.map(function (x) { return [x[0], x[0]]; })), o.level || '', function (v) { edit(function () { o.level = v; }, { noPlan: true }); }, { aria: 'TO certification level', cls: 'short' })),
         field('Preferred position', select('o' + i + 'pri', popts, o.primary || '', function (v) { edit(function () { o.primary = v; }); })),
         field('Max. short jobs / day', numIn('o' + i + 'max', o.max_secondary, function (v) { edit(function () { o.max_secondary = Math.max(0, Math.round(v)); }); }, { min: 0, max: 20, step: 1, inputmode: 'numeric', cls: 'short' })),
         field('Available from', input('o' + i + 'af', o.available_from, function (v) { edit(function () { o.available_from = v; }); }, { type: 'time' })),
@@ -607,7 +715,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     root.appendChild(list);
   };
   function pasteNames() {
-    var ta = h('textarea', { rows: 10, placeholder: 'One official per line.\nOptional country after a comma or tab, e.g.\nJane Doe, CRO' });
+    var ta = h('textarea', { rows: 10, placeholder: 'One official per line.\nOptional country and level after commas or tabs, e.g.\nJane Doe, CRO, 3a' });
     var mode = { replace: true };
     var body = h('div', { class: 'stack' }, ta, check('paste-mode', true, function (v) { mode.replace = v; }, 'Replace the current names (keeps preferences in order)'));
     dialog('Paste names', body, [['Cancel', null, ''], ['Use names', function () { return ta.value; }, 'primary']]).then(function (text) {
@@ -617,8 +725,10 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         var offs = A.ev.officials;
         lines.forEach(function (l, i) {
           var parts = l.split(/\t|;|,/), name = parts[0].trim(), cty = (parts[1] || '').trim().toUpperCase();
-          if (mode.replace && i < offs.length) { var old = offs[i].name; offs[i].name = name; if (cty) offs[i].country = cty; renameOfficial(old, name); }
-          else { var o = E.newOfficial(name); o.country = cty; offs.push(o); }
+          var lv = (parts[2] || '').trim().toLowerCase().replace(/^level\s*/, '');
+          if (!ref.TO_LEVELS.some(function (x) { return x[0] === lv; })) lv = '';
+          if (mode.replace && i < offs.length) { var old = offs[i].name; offs[i].name = name; if (cty) offs[i].country = cty; if (lv) offs[i].level = lv; renameOfficial(old, name); }
+          else { var o = E.newOfficial(name); o.country = cty; o.level = lv; offs.push(o); }
         });
       });
       toast(plural(lines.length, 'name') + ' added');
@@ -867,6 +977,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     root.appendChild(header('Conflicts', 'Clashes, tight hand-overs, jobs without a TO and rule warnings. Meetings and briefings count as busy time.'));
     var list = h('div', { class: 'list' });
     r.warnings.forEach(function (w) { list.appendChild(h('div', { class: 'list-row conf-row' }, chip('WARNING'), h('div', { class: 'grow', text: w }))); });
+    (r.daylight || []).forEach(function (w) { list.appendChild(h('div', { class: 'list-row conf-row' }, chip(/too long/.test(w) ? 'WARNING' : 'DAYLIGHT'), h('div', { class: 'grow', text: w }))); });
     r.conflicts.forEach(function (c) {
       list.appendChild(h('div', { class: 'list-row conf-row' }, chip(c.level),
         h('div', { class: 'grow' }, h('strong', { text: c.official }),
@@ -1063,6 +1174,46 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     root.appendChild(h('div', { class: 'stack' }, card('Obligations of the appointed officials', tbl), card('Other rules used', rules),
       card('Sources', h('pre', { class: 'refs', text: ref.REFERENCES }))));
   };
+  var WHATS_NEW = [
+    ['1.0.3', 'November 2026', [
+      'Sunrise and sunset for every race – calculated from the venue’s coordinates and time zone (works offline), or typed in by hand.',
+      'Races stay in daylight: a start before sunrise, or a last finisher after sunset, moves the start automatically – every duty, meeting and the athletes’ guide follow. The margins (15 min by default) can be changed per race.',
+      'Tides on race day: high and low water with heights, the tide at the start and water notes – shown on the Races page, in the athletes’ guide and in the Excel export.',
+      'TO certification level (1, 2, 3a, 3b, 3c) for every official – in the officials list, Paste names and the Excel export.',
+      'This What’s new page.']],
+    ['1.0.2', 'November 2026', [
+      'Opening animation – swim, bike and run while the app starts (iPhone, iPad, Mac and web; tap to skip).',
+      'TriSport.me page with the website, help and our other apps.']],
+    ['1.0.1', 'November 2026', [
+      'Athletes’ guide: briefing, race-day times, course and key rules for athletes only – share it as a page or a calendar.']],
+    ['1.0.0', 'November 2026', [
+      'First release: positions, short jobs, meetings and briefings from the World Triathlon rules, Gantt chart, personal schedules, timeline, Excel and calendar export.']]
+  ];
+  A.WHATS_NEW = WHATS_NEW;
+  SECTIONS.whatsnew = function (root) {
+    root.appendChild(header('What’s new', 'Changes in each version of ' + ref.APP_NAME + '. You have version ' + ref.APP_VERSION + '.'));
+    WHATS_NEW.forEach(function (v, i) {
+      root.appendChild(card('Version ' + v[0] + (i === 0 ? ' – this version' : ''), h('div', { class: 'stack' },
+        h('div', { class: 'muted small', text: v[1] }),
+        h('ul', { class: 'whatsnew' }, v[2].map(function (t) { return h('li', { text: t }); })))));
+    });
+    root.appendChild(note('More on www.trisport.me/scheduler/whats-new.html', 'small'));
+  };
+  // once after an update: a short "What's new" (not on the first start, not in automated tests)
+  function whatsNewOnce() {
+    try {
+      if (navigator.webdriver) return;
+      var seen = Store.getPref('seenVersion', '');
+      Store.setPref('seenVersion', ref.APP_VERSION);
+      var usedBefore = seen || Store.getPref('lastDoc', '');
+      if (seen === ref.APP_VERSION || !usedBefore) return;
+      setTimeout(function () {
+        dialog('What’s new in ' + ref.APP_VERSION, h('ul', { class: 'whatsnew' }, WHATS_NEW[0][2].map(function (t) { return h('li', { text: t }); })),
+          [['All versions', 'all', ''], ['OK', null, 'primary']]).then(function (v) { if (v === 'all') go('whatsnew'); });
+      }, 3700);
+    } catch (e) { /* not important */ }
+  }
+
   SECTIONS.trisport = function (root) {
     function link(label, url, cls) { return btn(label, function () { Store.openLink(url); }, cls); }
     root.appendChild(header('TriSport.me', 'The home of Technical Officials Scheduler and its sister apps for triathlon officials, event organisers and athletes.',
@@ -1139,6 +1290,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       return Store.list();
     }).then(function (lib) {
       A.library = lib || [];
+      whatsNewOnce();
       var last = Store.getPref('lastDoc', '');
       var pick = A.library.filter(function (d) { return d.id === last; })[0] || A.library[0];
       if (pick) {

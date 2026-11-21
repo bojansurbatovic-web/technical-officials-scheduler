@@ -2,6 +2,8 @@
 # Starts the GTK app inside the snap (python3 and PyGObject come from the snap, GTK from the GNOME extension).
 # Messages of the last start are kept in ~/snap/technical-officials-scheduler/common/last-run.log for diagnostics.
 export PYTHONPATH="$SNAP/app:$SNAP/usr/lib/python3/dist-packages${PYTHONPATH:+:$PYTHONPATH}"
+# time-zone data shipped in the snap (sunrise / sunset in the venue's time zone)
+export PYTHONTZPATH="$SNAP/usr/share/zoneinfo:/usr/share/zoneinfo"
 LOG="${SNAP_USER_COMMON:-/tmp}/last-run.log"
 { echo "== $(date -Is) $SNAP_NAME $SNAP_VERSION (rev $SNAP_REVISION)"; echo "python: $(command -v python3)"; } > "$LOG" 2>/dev/null
 python3 -m wt_planner "$@" 2>>"$LOG"

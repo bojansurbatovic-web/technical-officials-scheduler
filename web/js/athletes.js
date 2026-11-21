@@ -69,6 +69,14 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     if (legs > 1) rows.unshift(['Format', legs + ' legs per team (each athlete swims, bikes and runs)']);
     if (r.draft_legal && +r.wheel_stations > 0) rows.push(['Wheel stations', String(r.wheel_stations)]);
     if (+r.aid_stations > 0) rows.push(['Aid stations (run)', String(r.aid_stations)]);
+    var sr = E.parseHHMM(r.sunrise), ss = E.parseHHMM(r.sunset);
+    if (sr !== null && ss !== null) rows.push(['Sunrise / sunset', E.fmtHHMM(sr) + ' / ' + E.fmtHHMM(ss)]);
+    var tides = E.tideList(r);
+    if (tides.length) {
+      rows.push(['Tides', tides.map(function (t) { return (t.kind === 'low' ? 'Low water ' : 'High water ') + E.fmtHHMM(t.time) + (t.height ? ' (' + t.height + ')' : ''); }).join(' · ')]);
+      rows.push(['At the start', E.tideAtStart(r)]);
+    }
+    if (String(r.tide_notes || '').trim()) rows.push(['Water notes', String(r.tide_notes).trim()]);
     return rows;
   };
 

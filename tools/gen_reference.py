@@ -7,7 +7,7 @@ ref = importlib.util.module_from_spec(spec); spec.loader.exec_module(ref)
 names = ["FORMATS", "FORMAT_ORDER", "CATEGORIES", "CATEGORY_ORDER", "SCHEDULE_DEFAULTS", "SCHEDULE_LABELS",
          "DUTY_DEFAULTS", "DUTY_KEYS", "ACTIVITIES", "POSITIONS", "POSITION_FIELDS", "POSITION_INDEX",
          "RADIO_DEFAULTS", "SESSIONS", "SESSION_ORDER", "SESSION_PRESETS", "BRIEFING_GROUPS", "BRIEFING_LABELS",
-         "START_WINDOWS", "REFERENCES"]
+         "START_WINDOWS", "REFERENCES", "TO_LEVELS"]
 data = {n: getattr(ref, n) for n in names}
 data["NON_BLOCKING"] = sorted(ref.NON_BLOCKING)
 out = os.path.join(os.path.dirname(__file__), "..", "web", "js", "reference.js")
@@ -16,6 +16,6 @@ with open(out, "w", encoding="utf-8") as f:
     f.write("var WTP = (typeof WTP !== 'undefined') ? WTP : {};\n")
     f.write("WTP.ref = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n")
     f.write("WTP.ref.APP_NAME = 'Technical Officials Scheduler';\nWTP.ref.APP_SHORT = 'TO Scheduler';\n")
-    f.write("WTP.ref.APP_VERSION = '1.0.2';\nWTP.ref.FILE_SUFFIX = '.wtplan.json';\n")
+    f.write("WTP.ref.APP_VERSION = '1.0.3';\nWTP.ref.FILE_SUFFIX = '.wtplan.json';\n")
     f.write("if (typeof module !== 'undefined') module.exports = WTP;\n")
 print("wrote", os.path.normpath(out))

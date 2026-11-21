@@ -7,6 +7,9 @@ Enter your races and your team, and the planner:
 • keeps the Head Referee on duty through the protest time after each race
 • warns when starts are closer than the Event Organisers’ Manual allows
 • counts the radios you need
+• keeps every race in daylight: sunrise and sunset from the venue’s location, and a start before sunrise or a finish after sunset is moved automatically
+• adds tides on race day – high and low water, the tide at the start and notes for athletes
+• records each official’s TO certification level (1, 2, 3a, 3b, 3c)
 
 Every format: super-sprint, sprint, standard, mixed relay, middle and long distance – on one day or across a weekend. Tick who works which race, set availability and preferred positions, lock your own choices and let the planner fill the rest. Every time allowance from the TO Checklist can be adjusted, and any duty window can be moved for one race.
 

@@ -4,7 +4,7 @@ sys.path.insert(0, sys.argv[1])
 from wt_planner import engine as E, exporters as X
 g = json.load(open(os.path.join(os.path.dirname(__file__), "..", "tests", "golden.json")))
 out = {}
-for case in g[:2] + [c for c in g if c["name"] == "tweaks_and_overrides"]:
+for case in g[:2] + [c for c in g if c["name"] in ("tweaks_and_overrides", "daylight_and_tides")]:
     ev = E.normalise(copy.deepcopy(case["input"])); E.auto_assign(ev); res = E.evaluate(ev)
     tables = [[n, rows, w, {f"{r},{c}": s for (r, c), s in st.items()}] for n, rows, w, st in X.build_tables(ev, res)]
     import tempfile; p = os.path.join(tempfile.mkdtemp(), "g.ics"); X.write_ics(p, ev, res)

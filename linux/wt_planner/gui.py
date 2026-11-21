@@ -232,6 +232,54 @@ def to_float(text, default=0.0):
 
 
 # ======================================================================= main window
+def zone_offset(tz, iso):
+    """Local time minus UTC (minutes) at noon of date iso in time zone tz ('' = this computer's); None if unknown."""
+    try:
+        d = dt.datetime.fromisoformat(iso + "T12:00:00")
+        if tz:
+            from zoneinfo import ZoneInfo
+            return ZoneInfo(tz).utcoffset(d).total_seconds() / 60.0
+        return d.astimezone().utcoffset().total_seconds() / 60.0
+    except Exception:  # unknown zone, no time-zone data
+        return None
+
+
+def refresh_sun(ev):
+    """Sunrise / sunset of every race that follows the venue (sun_auto), from its coordinates and time zone."""
+    c = E.parse_coords(ev["event"].get("location", ""))
+    if not c:
+        return
+    tz = (ev["event"].get("timezone") or "").strip()
+    for r in ev["races"]:
+        if r.get("sun_auto") is False:
+            continue
+        iso = E.race_date(ev, r).isoformat()
+        off = zone_offset(tz, iso)
+        if off is None:
+            continue
+        st = E.sun_times(c[0], c[1], iso, off)
+        r["sunrise"] = E.fmt_hhmm(int(st[0] + 0.5)) if st else ""
+        r["sunset"] = E.fmt_hhmm(int(st[1] + 0.5)) if st else ""
+
+
+WHATS_NEW = [
+    ("1.5.0", "November 2026", [
+        "Sunrise and sunset for every race – calculated from the venue's coordinates and time zone (works offline), or typed in by hand.",
+        "Races stay in daylight: a start before sunrise, or a last finisher after sunset, moves the start automatically – every duty, "
+        "meeting and the athletes' guide follow. The margins (15 min by default) can be changed per race.",
+        "Tides on race day: high and low water with heights, the tide at the start and water notes – in the race editor, the athletes' "
+        "guide and the spreadsheet export.",
+        "TO certification level (1, 2, 3a, 3b, 3c) for every official – in the Officials tab, Paste names and the export.",
+        "This What's new window (menu › What's new)."]),
+    ("1.4.1", "November 2026", ["Starts reliably when installed from the Snap Store."]),
+    ("1.4.0", "November 2026", ["Athletes' guide tab: briefing, race-day times, course and key rules for athletes only.",
+                                "TriSport.me in the menu: website, help and other apps."]),
+    ("1.3 and earlier", "2026", ["Positions, short jobs, meetings and briefings from the World Triathlon rules, Gantt chart, "
+                                 "personal schedules, timeline, spreadsheet and calendar export."]),
+]
+SEEN_FILE = os.path.join(CONF_DIR, "seen_version")
+
+
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title=ref.APP_NAME)
@@ -281,6 +329,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.show_all()
         if self._small_screen:
             self.side_btn.set_active(False)
+        if not os.environ.get("WTP_NO_WHATSNEW"):
+            GLib.idle_add(self.whats_new_once)
 
     # ------------------------------------------------------------------ window size
     def _fit_to_screen(self):
@@ -321,6 +371,7 @@ class MainWindow(Gtk.ApplicationWindow):
             "export_ics": (lambda *a: self.on_export("ics"), []),
             "export_athletes": (lambda *a: self.on_export_athletes("html"), []),
             "trisport": (lambda *a: self._open_uri("https://www.trisport.me/"), []),
+            "whatsnew": (lambda *a: self.on_whats_new(), []),
             "export_svg": (lambda *a: self.on_export("svg"), []),
             "share": (self.on_share, []), "copy_json": (self.on_copy_json, []),
             "open_library": (self.on_open_library, []), "undo": (self.on_undo, ["<Primary>z"]),
@@ -395,6 +446,7 @@ class MainWindow(Gtk.ApplicationWindow):
         sec5 = Gio.Menu()
         sec5.append("Example: two races back to back (Q3)", "win.example_q3")
         sec5.append("Example: two-day weekend, 3 races", "win.example_multi")
+        sec5.append("What's new", "win.whatsnew")
         sec5.append("TriSport.me – website, help and other apps", "win.trisport")
         sec5.append("References & about", "win.about")
         menu.append_section(None, sec5)
@@ -514,7 +566,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.f = {}
         fields = [("name", "Event name", 30), ("venue", "Venue", 22), ("date", "Date (YYYY-MM-DD)", 12),
                   ("td", "Technical Delegate", 22), ("md", "Medical Delegate", 22),
-                  ("jury0", "Jury member 2", 22), ("jury1", "Jury member 3", 22)]
+                  ("jury0", "Jury member 2", 22), ("jury1", "Jury member 3", 22),
+                  ("location", "Venue coordinates (lat, lon) – for sunrise / sunset", 22),
+                  ("timezone", "Time zone (e.g. Europe/Zagreb; empty = this computer's)", 20)]
         items = []
         for k, t, wc in fields:
             en = Gtk.Entry()
@@ -593,6 +647,41 @@ class MainWindow(Gtk.ApplicationWindow):
         tbox.pack_start(rbtn, False, False, 0)
         self.race_summary = label("", wrap=True)
         tbox.pack_start(self.race_summary, False, False, 0)
+        # daylight and tides of the selected race
+        tbox.pack_start(label("Daylight and tides", bold=True), False, False, 4)
+        self.sun_rise, self.sun_set = Gtk.Entry(), Gtk.Entry()
+        for en, key in ((self.sun_rise, "sunrise"), (self.sun_set, "sunset")):
+            en.set_width_chars(6)
+            en.set_placeholder_text("HH:MM")
+            en.connect("changed", self._on_sun_entry, key)
+        self.dl_after, self.dl_before = spin(0, 180, 5, 0, 15), spin(0, 180, 5, 0, 15)
+        self.dl_after.connect("value-changed", self._on_dl_spin, "daylight_after_sunrise")
+        self.dl_before.connect("value-changed", self._on_dl_spin, "daylight_before_sunset")
+        self.dl_check = Gtk.CheckButton(label="Keep the race in daylight (moves the start when needed)")
+        self.dl_check.connect("toggled", self._on_dl_check)
+        self.sun_venue_btn = Gtk.Button(label="Use the venue's sunrise and sunset")
+        self.sun_venue_btn.connect("clicked", lambda w: self._on_sun_venue())
+        tbox.pack_start(flow(field("Sunrise", self.sun_rise), field("Sunset", self.sun_set),
+                             field("Start after sunrise + min", self.dl_after),
+                             field("Last finisher before sunset − min", self.dl_before), self.dl_check, self.sun_venue_btn),
+                        False, False, 0)
+        self.dl_status = label("", wrap=True)
+        tbox.pack_start(self.dl_status, False, False, 0)
+        self.tide_labels = [t for _, t in E.TIDE_KINDS]
+        self.tide_store = Gtk.ListStore(str, str, str, int)   # kind label, time, height, index
+        self.tide_tree = Gtk.TreeView(model=self.tide_store)
+        combo_column(self.tide_tree, "Tide", 0, str_model(self.tide_labels), self._on_tide_edit, width=120)
+        text_column(self.tide_tree, "Time", 1, True, self._on_tide_edit, width=70)
+        text_column(self.tide_tree, "Height", 2, True, self._on_tide_edit, width=90)
+        tbox.pack_start(scrolled(self.tide_tree, 90), False, False, 0)
+        tb_add, tb_del = Gtk.Button(label="Add high or low water"), Gtk.Button(label="Remove selected tide")
+        tb_add.connect("clicked", lambda w: self._on_tide_add())
+        tb_del.connect("clicked", lambda w: self._on_tide_del())
+        self.tide_notes = Gtk.Entry()
+        self.tide_notes.set_width_chars(46)
+        self.tide_notes.set_placeholder_text("e.g. current along the swim course at high water")
+        self.tide_notes.connect("changed", self._on_tide_notes)
+        tbox.pack_start(flow(tb_add, tb_del, field("Water notes for athletes", self.tide_notes)), False, False, 0)
         fr.add(tbox)
         outer.pack_start(fr, False, False, 0)
         self.nb.append_page(page(outer), Gtk.Label(label="Event & races"))
@@ -610,7 +699,9 @@ class MainWindow(Gtk.ApplicationWindow):
                 j[int(key[-1])] = val
             else:
                 self.ev["event"][key] = val
-        self.edit(apply, replan=False, coalesce=f"field:{key}")
+        if key == "location" and val.strip() and not E.parse_coords(val):
+            return   # still typing / not recognised: keep the last valid coordinates
+        self.edit(apply, replan=key in ("date", "location", "timezone"), coalesce=f"field:{key}")
         if key == "date":
             self._sync_calendar_to_event()
 
@@ -686,8 +777,98 @@ class MainWindow(Gtk.ApplicationWindow):
         self._loading = True
         for (grp, k), sb in self.tw.items():
             sb.set_value(float(race[grp].get(k, 0)))
+        for en, key in ((self.sun_rise, "sunrise"), (self.sun_set, "sunset")):
+            if en.get_text() != (race.get(key) or "") and not en.has_focus():
+                en.set_text(race.get(key) or "")
+        self.dl_after.set_value(float(race.get("daylight_after_sunrise", 15) or 0))
+        self.dl_before.set_value(float(race.get("daylight_before_sunset", 15) or 0))
+        self.dl_check.set_active(race.get("daylight", True) is not False)
+        self.sun_venue_btn.set_visible(race.get("sun_auto") is False and bool(E.parse_coords(self.ev["event"].get("location", ""))))
+        if self.tide_notes.get_text() != (race.get("tide_notes") or "") and not self.tide_notes.has_focus():
+            self.tide_notes.set_text(race.get("tide_notes") or "")
+        self.tide_store.clear()
+        for i, t in enumerate(race.get("tides") or []):
+            self.tide_store.append([dict(E.TIDE_KINDS).get(t.get("kind"), "High water"), t.get("time", ""), t.get("height", ""), i])
         self._loading = False
         self._update_race_summary()
+
+    # ---- daylight and tides of the selected race
+    def _on_sun_entry(self, entry, key):
+        race = self._current_race()
+        if self._loading or race is None:
+            return
+        text = entry.get_text().strip()
+        t = E.parse_hhmm(text)
+        if text and t is None:
+            return
+        val = E.fmt_hhmm(t) if t is not None else ""
+
+        def apply():
+            race[key] = val
+            race["sun_auto"] = False
+        self.edit(apply, coalesce=f"sun:{race['id']}:{key}")
+
+    def _on_dl_spin(self, sb, key):
+        race = self._current_race()
+        if self._loading or race is None:
+            return
+        v = int(sb.get_value())
+        self.edit(lambda: race.__setitem__(key, v), coalesce=f"dl:{race['id']}:{key}")
+
+    def _on_dl_check(self, cb):
+        race = self._current_race()
+        if self._loading or race is None:
+            return
+        self.edit(lambda: race.__setitem__("daylight", cb.get_active()))
+
+    def _on_sun_venue(self):
+        race = self._current_race()
+        if race is not None:
+            self.edit(lambda: race.__setitem__("sun_auto", True))
+
+    def _on_tide_edit(self, renderer, path, text, idx):
+        race = self._current_race()
+        if race is None:
+            return
+        i = self.tide_store[path][3]
+        t = race.setdefault("tides", [])[i]
+
+        def apply():
+            if idx == 0:
+                t["kind"] = "low" if text == dict(E.TIDE_KINDS)["low"] else "high"
+            elif idx == 1:
+                m = E.parse_hhmm(text)
+                if m is not None:
+                    t["time"] = E.fmt_hhmm(m)
+            elif idx == 2:
+                t["height"] = text.strip()
+        self.edit(apply, replan=False)
+
+    def _on_tide_add(self):
+        race = self._current_race()
+        if race is None:
+            return
+
+        def apply():
+            tides = race.setdefault("tides", [])
+            kind = "low" if tides and tides[-1].get("kind") == "high" else "high"
+            tides.append({"kind": kind, "time": race.get("start") or "10:00", "height": ""})
+        self.edit(apply, replan=False)
+
+    def _on_tide_del(self):
+        race = self._current_race()
+        model, it = self.tide_tree.get_selection().get_selected()
+        if race is None or it is None:
+            return
+        i = model[it][3]
+        self.edit(lambda: race.setdefault("tides", []).pop(i), replan=False)
+
+    def _on_tide_notes(self, entry):
+        race = self._current_race()
+        if self._loading or race is None:
+            return
+        val = entry.get_text()
+        self.edit(lambda: race.__setitem__("tide_notes", val), replan=False, coalesce=f"tn:{race['id']}")
 
     def _update_race_summary(self):
         race = self._current_race()
@@ -707,6 +888,22 @@ class MainWindow(Gtk.ApplicationWindow):
             f"medals {F(tl['medal'])}"
             + "".join(f"\n⚠ {GLib.markup_escape_text(w)}" for w in self.result.get("warnings", [])
                       if race["name"] in w))
+        d = E.daylight(race)
+        if d["sunrise"] is None or d["sunset"] is None:
+            st = ("Enter sunrise and sunset – or the venue's coordinates above – to keep this race in daylight."
+                  if not E.parse_coords(self.ev["event"].get("location", "")) else
+                  "No sunrise or sunset on this day at the venue – no daylight limits.")
+        elif race.get("daylight") is False:
+            st = "The daylight check is off for this race."
+        elif not d["ok"]:
+            st = f"⚠ Too long for the daylight: about {E.fmt_span(d['duration'])} from the start to the last finisher."
+        elif d["moved"]:
+            st = (f"☀ Planned {E.fmt_hhmm(d['planned'])} – the plan uses {E.fmt_hhmm(d['start'])}, "
+                  + ("so the race starts after sunrise." if d["moved"] == "sunrise" else "so the last finisher is in before sunset."))
+        else:
+            st = f"☀ In daylight. Starts between {E.fmt_hhmm(d['earliest'])} and {E.fmt_hhmm(d['latest'])} keep it so."
+        tat = E.tide_at_start(race)
+        self.dl_status.set_text(st + (f"\n{tat}" if tat else ""))
 
     def _on_race_tweak(self, sb, grp, key):
         if self._loading:
@@ -789,13 +986,15 @@ class MainWindow(Gtk.ApplicationWindow):
         box.set_border_width(10)
         box.pack_start(label("Technical Officials available – the planner gives each one a primary position and fills the "
                              "short jobs as secondary positions without time clashes.", wrap=True), False, False, 0)
-        # name, country, primary title, max sec, from, to, radio, notes, idx
-        self.off_store = Gtk.ListStore(str, str, str, str, str, str, bool, str, int)
+        # name, country, primary title, max sec, from, to, radio, notes, idx, level
+        self.off_store = Gtk.ListStore(str, str, str, str, str, str, bool, str, int, str)
         self.off_tree = Gtk.TreeView(model=self.off_store)
         self.pos_titles = [AUTO] + [p["title"] for p in sorted(ref.POSITION_INDEX.values(), key=lambda p: p["priority"])]
         self.pos_by_title = {p["title"]: k for k, p in ref.POSITION_INDEX.items()}
         text_column(self.off_tree, "Name and surname", 0, True, self._on_off_edit, width=200, expand=True)
         text_column(self.off_tree, "Country / NF", 1, True, self._on_off_edit, width=80)
+        self.level_labels = ["—"] + [v for v, _ in ref.TO_LEVELS]
+        combo_column(self.off_tree, "TO level", 9, str_model(self.level_labels), self._on_off_edit, width=70)
         combo_column(self.off_tree, "Preferred primary position", 2, str_model(self.pos_titles), self._on_off_edit, width=260)
         spin_column(self.off_tree, "Max secondary jobs", 3, 0, 8, 1, 0, self._on_off_edit)
         text_column(self.off_tree, "Available from", 4, True, self._on_off_edit, width=70)
@@ -818,7 +1017,7 @@ class MainWindow(Gtk.ApplicationWindow):
         b.connect("clicked", lambda w: self.on_set_n_officials())
         bb.add(b)
         b = Gtk.Button(label="Paste names…")
-        b.set_tooltip_text("One per line: Name; Country; Primary position (country and position optional)")
+        b.set_tooltip_text("One per line: Name; Country; Primary position; Level (all but the name optional)")
         b.connect("clicked", lambda w: self.on_paste_names())
         bb.add(b)
         b = Gtk.Button(label="Clear preferred primaries")
@@ -857,6 +1056,8 @@ class MainWindow(Gtk.ApplicationWindow):
                 o["available_from" if idx == 4 else "available_to"] = E.fmt_hhmm(t) if t is not None else ""
             elif idx == 7:
                 o["notes"] = text
+            elif idx == 9:
+                o["level"] = "" if text not in self.level_labels[1:] else text
         self.edit(apply, replan=idx in (2, 3, 4, 5))
 
     def _on_off_toggle(self, renderer, path, idx):
@@ -926,6 +1127,9 @@ class MainWindow(Gtk.ApplicationWindow):
                 o["country"] = parts[1]
             if len(parts) > 2:
                 o["primary"] = self.pos_by_title.get(parts[2], "")
+            if len(parts) > 3:
+                lv = re.sub(r"^level\s*", "", parts[3].lower())
+                o["level"] = lv if lv in [v for v, _ in ref.TO_LEVELS] else ""
             rows.append(o)
 
         def apply():
@@ -1809,6 +2013,7 @@ class MainWindow(Gtk.ApplicationWindow):
     # ------------------------------------------------------------------ refresh views
     def refresh_all(self):
         try:
+            refresh_sun(self.ev)
             self.result = E.evaluate(self.ev)
         except Exception as err:  # keep the window alive on odd input
             self.summary.set_text(f"Could not calculate: {err}")
@@ -1866,7 +2071,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 prim = ref.POSITION_INDEX.get(o.get("primary") or "", {}).get("title", AUTO)
                 self.off_store.append([o["name"], o.get("country", ""), prim, str(int(o.get("max_secondary", 3))),
                                        o.get("available_from", ""), o.get("available_to", ""), bool(o.get("radio", True)),
-                                       o.get("notes", ""), i])
+                                       o.get("notes", ""), i, o.get("level") or "—"])
         self._keep_scroll(self.off_tree, do)
         self._loading = True
         self.n_off.set_value(len(self.ev["officials"]))
@@ -2011,6 +2216,9 @@ class MainWindow(Gtk.ApplicationWindow):
                                  c["b_time"], "" if c["gap"] is None else str(c["gap"]), STATUS_BG.get(c["level"]) or "#FFFFFF"])
         for w in self.result.get("warnings", []):
             self.c_store.append(["WARNING", "", w, "", "", "", "", "", "", STATUS_BG["TIGHT"]])
+        for w in self.result.get("daylight", []):
+            self.c_store.append(["WARNING" if "too long" in w else "DAYLIGHT", "", w, "", "", "", "", "", "",
+                                 STATUS_BG["TIGHT"] if "too long" in w else "#FFF4E5"])
         for u in self.result["unfilled"]:
             self.c_store.append(["UNFILLED", "", u["title"], u["race"], f"{self.result['fmt'](u['start'])}–{E.fmt_hhmm(u['end'] % 1440)}",
                                  "", "", "", "", STATUS_BG["UNFILLED"]])
@@ -2248,6 +2456,40 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_open_library(self, *a):
         os.makedirs(LIB_DIR, exist_ok=True)
         Gio.AppInfo.launch_default_for_uri(GLib.filename_to_uri(LIB_DIR, None), None)
+
+    def on_whats_new(self, only_latest=False):
+        dlg = Gtk.Dialog(title=f"What's new in {ref.APP_NAME}", transient_for=self, modal=True)
+        dlg.add_button("OK", Gtk.ResponseType.OK)
+        dlg.set_default_size(560, 420 if not only_latest else 300)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_border_width(12)
+        for ver, when, items in (WHATS_NEW[:1] if only_latest else WHATS_NEW):
+            box.pack_start(label(f"Version {ver}" + (" – this version" if ver == ref.APP_VERSION else "") + f"   ({when})", bold=True),
+                           False, False, 4)
+            for t in items:
+                box.pack_start(label("•  " + t, wrap=True), False, False, 0)
+        if only_latest:
+            box.pack_start(label("All versions: menu › What's new", dim=True), False, False, 6)
+        dlg.get_content_area().pack_start(scrolled(box, 260), True, True, 0)
+        dlg.show_all()
+        dlg.run()
+        dlg.destroy()
+
+    def whats_new_once(self):
+        """After an update (not on the very first start): show what's new in this version once."""
+        try:
+            seen = open(SEEN_FILE, encoding="utf-8").read().strip()
+        except OSError:
+            seen = ""
+        try:
+            os.makedirs(CONF_DIR, exist_ok=True)
+            with open(SEEN_FILE, "w", encoding="utf-8") as f:
+                f.write(ref.APP_VERSION)
+        except OSError:
+            pass
+        if seen != ref.APP_VERSION and (seen or load_recent()):
+            GLib.timeout_add(600, lambda: (self.on_whats_new(only_latest=True), False)[1])
+        return False
 
     def on_about(self, *a):
         d = Gtk.AboutDialog(transient_for=self, modal=True)

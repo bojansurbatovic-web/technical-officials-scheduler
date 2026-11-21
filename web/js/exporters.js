@@ -15,6 +15,17 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     var h = c.replace('#', ''), rgb = [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); });
     return '#' + rgb.map(function (v) { return hex2(Math.trunc(v + (255 - v) * f)); }).join('');
   };
+  // TO certification level label, and the daylight / tide cells of a race (same text as the Ubuntu app)
+  function levelLabel(v) { var m = (ref.TO_LEVELS || []).filter(function (x) { return x[0] === v; })[0]; return m ? m[1] : ''; }
+  X.levelLabel = levelLabel;
+  function sunCells(r) {
+    var d = E.daylight(r), known = d.sunrise !== null && d.sunset !== null;
+    var state = !known || r.daylight === false ? '' : !d.ok ? 'Too long for the daylight' : d.moved === 'sunrise' ? 'Start moved to after sunrise' :
+      d.moved === 'sunset' ? 'Start moved so the race ends before sunset' : 'In daylight';
+    return [d.moved ? E.fmtHHMM(d.planned) : '', d.sunrise === null ? '' : E.fmtHHMM(d.sunrise), d.sunset === null ? '' : E.fmtHHMM(d.sunset),
+      state, E.tideAtStart(r)];
+  }
+  X.sunCells = sunCells;
   X.raceColour = function (ev, rid) {
     if (rid === 'session') return SESSION_COLOUR;
     if (E.isDayKey(rid)) return '#5A5A5A';
@@ -44,12 +55,12 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     });
     sheets.push(['Assignments', rows, [40, 26, 24, 11, tw, tw, 14, 8, 18], styles]);
 
-    rows = [['Name and surname', 'Country', 'Primary position', 'Secondary position(s)', 'Busy (h)', 'Radio', 'Conflicts']]; styles = {};
+    rows = [['Name and surname', 'Country', 'Primary position', 'Secondary position(s)', 'Busy (h)', 'Radio', 'Conflicts', 'TO level']]; styles = {};
     var offmap = {}; ev.officials.forEach(function (o) { offmap[o.name] = o; });
     res.officials.forEach(function (o) {
       var om = offmap[o.name] || {};
       rows.push([o.name, o.country, o.primary || '—', o.secondary.join('; ') || '—', round1(o.busy_min / 60),
-        om.radio === false ? 'no' : 'yes', o.conflicts]);
+        om.radio === false ? 'no' : 'yes', o.conflicts, levelLabel(om.level)]);
       if (o.conflicts) st(rows.length - 1, 6, 'st_CONFLICT');
     });
     rows.push([]);
@@ -66,7 +77,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     rows.push(['VCC base radio', rd.vcc, 'EOM 6.6.2 a', '', '', '', '']);
     rows.push(['Spares', rd.spare, (e.spare_pct == null ? 10 : e.spare_pct) + ' % rounded up', '', '', '', '']);
     rows.push(['TOTAL', rd.total, 'EOM: min. 12, TO equipment list 25', '', '', '', '']); st(rows.length - 1, 0, 'bold');
-    sheets.push(['Officials', rows, [30, 10, 34, 60, 9, 7, 10], styles]);
+    sheets.push(['Officials', rows, [30, 10, 34, 60, 9, 7, 10, 10], styles]);
 
     rows = [['Name and surname'].concat(races.map(function (r) { return r.name + ' (' + fmt(res.timelines[r.id].start) + ')'; }))]; styles = {};
     ev.officials.forEach(function (o) {
@@ -96,14 +107,14 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       if (m.key === 'start') st(rows.length - 1, 2, 'bold');
     });
     rows.push([]);
-    rows.push(['Race', 'Format', 'Category', 'Start', 'Swim', 'T1', 'Bike', 'T2', 'Run', 'Winner', 'Last finisher']);
-    for (var c = 0; c < 11; c++) st(rows.length - 1, c, 'header');
+    rows.push(['Race', 'Format', 'Category', 'Start', 'Swim', 'T1', 'Bike', 'T2', 'Run', 'Winner', 'Last finisher', 'Planned start', 'Sunrise', 'Sunset', 'Daylight', 'Tide at the start']);
+    for (var c = 0; c < 16; c++) st(rows.length - 1, c, 'header');
     races.forEach(function (r) {
       var tl = res.timelines[r.id], sg = tl._segments;
       rows.push([r.name, ref.FORMATS[r.format].label, ref.CATEGORIES[r.category].label, fmt(tl.start),
-        E.fmtDur(sg.swim), E.fmtDur(sg.t1), E.fmtDur(sg.bike), E.fmtDur(sg.t2), E.fmtDur(sg.run), fmt(tl.winner), fmt(tl.last_finisher)]);
+        E.fmtDur(sg.swim), E.fmtDur(sg.t1), E.fmtDur(sg.bike), E.fmtDur(sg.t2), E.fmtDur(sg.run), fmt(tl.winner), fmt(tl.last_finisher)].concat(sunCells(r)));
     });
-    sheets.push(['Race timeline', rows, [26, 34, 26, tw, 8, 7, 8, 7, 8, tw, 14], styles]);
+    sheets.push(['Race timeline', rows, [26, 34, 26, tw, 8, 7, 8, 7, 8, tw, 14, 12, 9, 9, 34, 60], styles]);
 
     rows = [['Date', 'From', 'To', 'Meeting / briefing', 'Who must attend', 'People', 'Rule / reference', 'In plan']]; styles = {};
     sortBy(res.sessions, function (x) { return [x.s, x.e]; }).forEach(function (se) {

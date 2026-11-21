@@ -67,6 +67,33 @@ def test_window_builds_and_handlers_run():
     sb.set_value(41.5)
     w._on_race_tweak(sb, "paces", "bike_speed")
     w.on_reset_race()
+    # sunrise / sunset from the venue, daylight, tides (1.5.0)
+    w.f["location"].set_text("43.5081, 16.4402")
+    w._on_event_field(w.f["location"], "location")
+    w.f["timezone"].set_text("Europe/Zagreb")
+    w._on_event_field(w.f["timezone"], "timezone")
+    w.refresh_all()
+    race = w._current_race()
+    assert race["sunrise"] and race["sunset"], race
+    w.sun_rise.set_text("07:40")
+    w._on_sun_entry(w.sun_rise, "sunrise")
+    assert race["sunrise"] == "07:40" and race["sun_auto"] is False
+    w._on_sun_venue()
+    assert race["sun_auto"] is True
+    w._on_tide_add()
+    w.refresh_all()
+    w._on_tide_edit(None, "0", "Low water", 0)
+    w._on_tide_edit(None, "0", "08:10", 1)
+    w._on_tide_edit(None, "0", "0.4 m", 2)
+    assert race["tides"][0] == {"kind": "low", "time": "08:10", "height": "0.4 m"}, race["tides"]
+    w.tide_notes.set_text("Current along the swim course")
+    w._on_tide_notes(w.tide_notes)
+    assert race["tide_notes"] == "Current along the swim course"
+    w.dl_after.set_value(30)
+    w._on_dl_spin(w.dl_after, "daylight_after_sunrise")
+    assert race["daylight_after_sunrise"] == 30
+    w._update_race_summary()
+    w.on_whats_new()
     # officials
     w._on_off_edit(None, "0", "Renamed Person", 0)
     assert w.ev["officials"][0]["name"] == "Renamed Person"
@@ -76,6 +103,10 @@ def test_window_builds_and_handlers_run():
     w._on_off_edit(None, "2", "", 4)
     w._on_off_edit(None, "3", "1", 3)
     w._on_off_toggle(None, "4", 6)
+    w._on_off_edit(None, "4", "3a", 9)
+    assert w.ev["officials"][4]["level"] == "3a"
+    w._on_off_edit(None, "4", "—", 9)
+    assert w.ev["officials"][4]["level"] == ""
     w.on_add_official()
     w.n_off.set_value(15)
     w.on_set_n_officials()

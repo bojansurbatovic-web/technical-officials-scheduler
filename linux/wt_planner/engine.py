@@ -124,6 +124,176 @@ def fmt_dur(minutes):
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
 
 
+# ---------------------------------------------------------------- sun and tides
+# Sunrise / sunset from the venue's coordinates (NOAA solar calculator, accurate to about a minute; works offline).
+def _jd(y, m, d):
+    if m <= 2: y -= 1; m += 12
+    a = y // 100; b = 2 - a + a // 4
+    return math.floor(365.25 * (y + 4716)) + math.floor(30.6001 * (m + 1)) + d + b - 1524.5
+def _sun(t):
+    L0 = (280.46646 + t * (36000.76983 + 0.0003032 * t)) % 360.0
+    M = 357.52911 + t * (35999.05029 - 0.0001537 * t)
+    e = 0.016708634 - t * (0.000042037 + 0.0000001267 * t)
+    Mr = math.radians(M)
+    C = math.sin(Mr) * (1.914602 - t * (0.004817 + 0.000014 * t)) + math.sin(2 * Mr) * (0.019993 - 0.000101 * t) + math.sin(3 * Mr) * 0.000289
+    lam = L0 + C - 0.00569 - 0.00478 * math.sin(math.radians(125.04 - 1934.136 * t))
+    eps0 = 23.0 + (26.0 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60.0) / 60.0
+    eps = eps0 + 0.00256 * math.cos(math.radians(125.04 - 1934.136 * t))
+    decl = math.asin(math.sin(math.radians(eps)) * math.sin(math.radians(lam)))
+    y = math.tan(math.radians(eps) / 2.0) ** 2
+    L0r = math.radians(L0)
+    eqt = 4.0 * math.degrees(y * math.sin(2 * L0r) - 2 * e * math.sin(Mr) + 4 * e * y * math.sin(Mr) * math.cos(2 * L0r)
+                             - 0.5 * y * y * math.sin(4 * L0r) - 1.25 * e * e * math.sin(2 * Mr))
+    return decl, eqt
+def _event(jd, lat, lon, rise):
+    utc = 720.0
+    for _ in range(2):
+        t = (jd + utc / 1440.0 - 2451545.0) / 36525.0
+        decl, eqt = _sun(t)
+        latr = math.radians(lat)
+        c = (math.cos(math.radians(90.833)) / (math.cos(latr) * math.cos(decl)) - math.tan(latr) * math.tan(decl))
+        if c > 1 or c < -1: return None
+        ha = math.degrees(math.acos(c))
+        utc = 720.0 - 4.0 * (lon + (ha if rise else -ha)) - eqt
+    return utc
+def sun_times(lat, lon, iso, offset_min):
+    """(sunrise, sunset) in minutes after local midnight on date iso; offset_min = local time minus UTC.
+    None when the sun does not rise or set that day (polar day or night)."""
+    y, m, d = (int(x) for x in iso.split("-"))
+    jd = _jd(y, m, d)
+    r, s = _event(jd, lat, lon, True), _event(jd, lat, lon, False)
+    if r is None or s is None: return None
+    return r + offset_min, s + offset_min
+
+
+def parse_coords(text):
+    """'43.5081, 16.4402' (or with ; / spaces) -> (lat, lon), or None."""
+    parts = [x for x in str(text or "").replace(";", " ").replace(",", " ").split() if x]
+    if len(parts) != 2:
+        return None
+    try:
+        lat, lon = float(parts[0]), float(parts[1])
+    except ValueError:
+        return None
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return None
+    return lat, lon
+
+
+def fmt_span(minutes):
+    """72 -> '1 h 12 min', 45 -> '45 min'."""
+    m = int(round(abs(minutes)))
+    return f"{m // 60} h {m % 60:02d} min" if m >= 60 else f"{m} min"
+
+
+def _ceil5(x):
+    return math.ceil(x / 5.0 - 1e-9) * 5.0
+
+
+def _floor5(x):
+    return math.floor(x / 5.0 + 1e-9) * 5.0
+
+
+def race_duration(race):
+    """Minutes from the start to the (estimated) last finisher."""
+    p = race["paces"]
+    legs = max(1, int(race.get("legs", 1)))
+    L = (float(race["swim_m"]) / 100.0 * float(p["swim_pace"]) + float(p["t1"])
+         + float(race["bike_km"]) / max(1e-6, float(p["bike_speed"])) * 60.0 + float(p["t2"])
+         + float(race["run_km"]) * float(p["run_pace"]))
+    return legs * L * (1 + float(p["gap_finish"]) / 100.0)
+
+
+def daylight(race):
+    """Where the race may start so that it starts after sunrise and the last finisher is in before sunset.
+    Returns planned / start minutes (same day), whether it was moved and why."""
+    planned = parse_hhmm(race.get("start"), 600.0)
+    out = {"planned": planned, "start": planned, "moved": "", "ok": True,
+           "sunrise": parse_hhmm(race.get("sunrise")), "sunset": parse_hhmm(race.get("sunset")),
+           "earliest": None, "latest": None, "duration": race_duration(race)}
+    if not race.get("daylight", True) or out["sunrise"] is None or out["sunset"] is None:
+        return out
+    after = float(race.get("daylight_after_sunrise", 15) or 0)
+    before = float(race.get("daylight_before_sunset", 15) or 0)
+    earliest = _ceil5(out["sunrise"] + after)
+    latest = _floor5(out["sunset"] - before - out["duration"])
+    out["earliest"], out["latest"] = earliest, latest
+    if latest < earliest:
+        out["ok"] = False
+        if planned < earliest:
+            out["start"], out["moved"] = earliest, "sunrise"
+        return out
+    if planned < earliest:
+        out["start"], out["moved"] = earliest, "sunrise"
+    elif planned > latest:
+        out["start"], out["moved"] = latest, "sunset"
+    return out
+
+
+def race_start(race):
+    """The start the plan uses: the planned start, moved into daylight when needed."""
+    return daylight(race)["start"]
+
+
+def daylight_notes(ev):
+    """Messages about starts moved into daylight, and races too long for the daylight."""
+    out = []
+    for r in races_sorted(ev):
+        d = daylight(r)
+        if d["sunrise"] is None or d["sunset"] is None or not r.get("daylight", True):
+            continue
+        after = int(float(r.get("daylight_after_sunrise", 15) or 0))
+        before = int(float(r.get("daylight_before_sunset", 15) or 0))
+        sr, ss = fmt_hhmm(d["sunrise"]), fmt_hhmm(d["sunset"])
+        if not d["ok"]:
+            avail = d["sunset"] - before - (d["sunrise"] + after)
+            out.append(f"{r['name']}: too long for the daylight – about {fmt_span(d['duration'])} from the start to the "
+                       f"last finisher, but only {fmt_span(max(0, avail))} between sunrise {sr} (+{after} min) and "
+                       f"sunset {ss} (−{before} min).")
+        elif d["moved"] == "sunrise":
+            out.append(f"{r['name']}: start moved from {fmt_hhmm(d['planned'])} to {fmt_hhmm(d['start'])} so the race "
+                       f"starts after sunrise ({sr} +{after} min).")
+        elif d["moved"] == "sunset":
+            out.append(f"{r['name']}: start moved from {fmt_hhmm(d['planned'])} to {fmt_hhmm(d['start'])} so the last "
+                       f"finisher is in before sunset ({ss} −{before} min).")
+    return out
+
+
+TIDE_KINDS = (("high", "High water"), ("low", "Low water"))
+
+
+def tide_list(race):
+    """The race day's tides with a valid time, in time order."""
+    out = []
+    for t in race.get("tides") or []:
+        m = parse_hhmm((t or {}).get("time"))
+        if m is None:
+            continue
+        kind = "low" if (t or {}).get("kind") == "low" else "high"
+        out.append({"kind": kind, "time": m, "height": str((t or {}).get("height") or "").strip()})
+    out.sort(key=lambda x: x["time"])
+    return out
+
+
+def tide_at_start(race):
+    """'Rising tide at the start: high water 08:42 (1.3 m), 1 h 12 min after the start.' or '' without tides."""
+    tides = tide_list(race)
+    if not tides:
+        return ""
+    s = race_start(race)
+    nxt = next((t for t in tides if t["time"] >= s), None)
+    prev = next((t for t in reversed(tides) if t["time"] < s), None)
+    ref_t = nxt or prev
+    label = dict(TIDE_KINDS)[ref_t["kind"]].lower()
+    h = f" ({ref_t['height']})" if ref_t["height"] else ""
+    when = (f"{fmt_span(ref_t['time'] - s)} after the start" if ref_t["time"] > s else
+            "at the start" if ref_t["time"] == s else f"{fmt_span(s - ref_t['time'])} before the start")
+    if nxt and nxt["time"] > s:
+        trend = "Rising" if nxt["kind"] == "high" else "Falling"
+        return f"{trend} tide at the start: {label} {fmt_hhmm(ref_t['time'])}{h}, {when}."
+    return f"Tide at the start: {label} {fmt_hhmm(ref_t['time'])}{h}, {when}."
+
+
 # ---------------------------------------------------------------- model builders
 def new_id(prefix="r"):
     return f"{prefix}{uuid.uuid4().hex[:6]}"
@@ -155,6 +325,12 @@ def new_race(fmt="standard", category="elite_women", start="10:00", name=None, d
                                        "gap_swim", "gap_t2", "gap_finish")},
         "schedule": dict(ref.SCHEDULE_DEFAULTS),
         "shifts": {},  # activity key -> [start shift, end shift] minutes
+        "sunrise": "", "sunset": "",   # "HH:MM" on the race day ("" = not known)
+        "sun_auto": True,              # filled from the event's location and time zone
+        "daylight": True,              # keep the start after sunrise and the last finisher before sunset
+        "daylight_after_sunrise": 15, "daylight_before_sunset": 15,
+        "tides": [],                   # [{"kind": "high"|"low", "time": "HH:MM", "height": "1.3 m"}]
+        "tide_notes": "",
     }
 
 
@@ -174,7 +350,8 @@ def new_event(name="New event", date="", races=None, n_officials=0):
         "app": "wt-planner", "version": 1,
         "event": {"name": name, "venue": "", "date": date, "notes": "",
                   "td": "", "md": "", "jury": ["", ""],
-                  "vcc_base": ref.RADIO_DEFAULTS["vcc_base"], "spare_pct": ref.RADIO_DEFAULTS["spare_pct"]},
+                  "vcc_base": ref.RADIO_DEFAULTS["vcc_base"], "spare_pct": ref.RADIO_DEFAULTS["spare_pct"],
+                  "location": "", "timezone": ""},   # "lat, lon" of the venue and its IANA time zone (sunrise / sunset)
         "settings": duty_defaults(),
         "races": races or [new_race()],
         "officials": [],
@@ -190,9 +367,9 @@ def new_event(name="New event", date="", races=None, n_officials=0):
 
 
 def new_official(name):
-    return {"name": name, "country": "", "primary": "", "max_secondary": 3,
+    return {"name": name, "country": "", "level": "", "primary": "", "max_secondary": 3,
             "available_from": "", "available_to": "", "radio": True, "notes": "",
-            "races": {}}   # race id -> False when the official does NOT work that race
+            "races": {}}   # level: TO certification "1", "2", "3a", "3b", "3c" ("" = not given)   # race id -> False when the official does NOT work that race
 
 
 def normalise(ev):
@@ -217,6 +394,8 @@ def normalise(ev):
             r["schedule"].setdefault(k, v)
         for k, v in tmpl["laps"].items():
             r["laps"].setdefault(k, v)
+        if not isinstance(r.get("tides"), list):
+            r["tides"] = []
     for o in ev["officials"]:
         for k, v in new_official("").items():
             o.setdefault(k, copy.deepcopy(v))
@@ -304,7 +483,7 @@ def protest_minutes(race):
 
 def race_timeline(race, offset=0.0):
     """Milestones in minutes from midnight of the first event day (offset = race day)."""
-    S = parse_hhmm(race.get("start"), 600.0) + float(offset)
+    S = race_start(race) + float(offset)
     p = race["paces"]
     sch = race["schedule"]
     legs = max(1, int(race.get("legs", 1)))
@@ -384,7 +563,7 @@ def build_sessions(ev):
     """Obligations outside the race itself, generated from the races (CR 2.7 b, 12.9; EOM 2.13, 3.2.8,
     Table 14). Each: id, key, name, date (date), start/end (minutes of that day), attendees, ref, enabled,
     for_races (race ids whose officials attend). User changes are in ev["sessions"] / ev["custom_sessions"]."""
-    races = sorted(ev["races"], key=lambda r: (race_date(ev, r), parse_hhmm(r.get("start"), 600.0)))
+    races = sorted(ev["races"], key=lambda r: (race_date(ev, r), race_start(r)))
     out = []
     if not races:
         return out
@@ -563,7 +742,7 @@ def start_window_warnings(ev):
         need = ref.START_WINDOWS.get(a["format"])
         if not need or not ref.CATEGORIES[a["category"]]["draft_legal"]:
             continue
-        gap = parse_hhmm(b["start"], 0) - parse_hhmm(a["start"], 0)
+        gap = race_start(b) - race_start(a)
         if gap < need - 15:
             warn.append(f"{a['name']} → {b['name']}: {int(gap)} min between starts; EOM 2.10.2 asks for "
                         f"{need} min (minimum {need - 15} min with TD approval).")
@@ -580,7 +759,7 @@ def start_window_warnings(ev):
 
 # ---------------------------------------------------------------- slots
 def races_sorted(ev):
-    return sorted(ev["races"], key=lambda r: race_offset(ev, r) + parse_hhmm(r.get("start"), 0.0))
+    return sorted(ev["races"], key=lambda r: race_offset(ev, r) + race_start(r))
 
 
 def build_slots(ev):
@@ -1061,7 +1240,7 @@ def evaluate(ev):
         se["people"] = wt + sorted(names_by_session.get(se["id"], []))
     unfilled = [r for r in rows if r["status"] == "UNFILLED"]
     return {"slots": slots, "timelines": tls, "rows": rows, "conflicts": conflicts, "fmt": fmt,
-            "sessions": sess, "wt_officials": wt_officials, "warnings": start_window_warnings(ev),
+            "sessions": sess, "wt_officials": wt_officials, "warnings": start_window_warnings(ev), "daylight": daylight_notes(ev),
             "multiday": multi, "dates": event_dates(ev),
             "officials": officials, "radios": radios, "unfilled": unfilled,
             "n_conflict": sum(1 for c in conflicts if c["level"] == "CONFLICT"),

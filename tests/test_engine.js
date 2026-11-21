@@ -33,6 +33,7 @@ for (const g of golden) {
   same(g.name, 'wt', res.wt_officials.map(w => [w.name, w.duties.length, w.conflicts]), x.wt);
   same(g.name, 'radios', res.radios, x.radios);
   same(g.name, 'warnings', res.warnings, x.warnings);
+  same(g.name, 'daylight', res.daylight, x.daylight);
   same(g.name, 'dates', res.dates, x.dates);
   same(g.name, 'counts', [res.multiday, res.n_conflict, res.n_tight], [x.multiday, x.n_conflict, x.n_tight]);
   same(g.name, 'fmt', [0, 599.5, 1439.99, 1500.25, 3000].map(res.fmt), x.fmt);

@@ -78,6 +78,16 @@ def course(ev, r):
         rows.append(("Wheel stations", str(r["wheel_stations"])))
     if int(r.get("aid_stations", 0) or 0) > 0:
         rows.append(("Aid stations (run)", str(r["aid_stations"])))
+    sr, ss = E.parse_hhmm(r.get("sunrise")), E.parse_hhmm(r.get("sunset"))
+    if sr is not None and ss is not None:
+        rows.append(("Sunrise / sunset", f"{E.fmt_hhmm(sr)} / {E.fmt_hhmm(ss)}"))
+    tides = E.tide_list(r)
+    if tides:
+        rows.append(("Tides", " · ".join(f"{'Low water' if t['kind'] == 'low' else 'High water'} {E.fmt_hhmm(t['time'])}"
+                                          + (f" ({t['height']})" if t["height"] else "") for t in tides)))
+        rows.append(("At the start", E.tide_at_start(r)))
+    if str(r.get("tide_notes") or "").strip():
+        rows.append(("Water notes", str(r["tide_notes"]).strip()))
     return rows
 
 

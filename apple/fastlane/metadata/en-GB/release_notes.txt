@@ -1,2 +1,5 @@
-New opening animation: swim, bike and run play for a moment while the app starts – tap to skip it.
-New TriSport.me page under More, with the website, help and our other apps.
+• Sunrise and sunset for every race – calculated from the venue’s coordinates and time zone, or typed in by hand.
+• Races stay in daylight: a start before sunrise, or a last finisher after sunset, moves the start automatically and the whole plan follows.
+• Tides on race day: high and low water with heights, the tide at the start and water notes – also in the athletes’ guide and the Excel export.
+• TO certification level (1, 2, 3a, 3b, 3c) for every official.
+• New What’s new page under More.

@@ -1,11 +1,11 @@
 ; Technical Officials Scheduler - Windows installer (Inno Setup 6).
 ; Built by .github/workflows/windows.yml:
-;   iscc /DAppVersion=1.0.1 /DArch=x64 /DPublishDir=..\publish\x64 installer\TOScheduler.iss
+;   iscc /DAppVersion=1.0.3 /DArch=x64 /DPublishDir=..\publish\x64 installer\TOScheduler.iss
 ; Installs for the current user without administrator rights, or for all users (the installer asks).
 ; Installs the Microsoft Edge WebView2 Runtime when the PC does not have it (it is part of Windows 11).
 
 #ifndef AppVersion
-  #define AppVersion "1.0.1"
+  #define AppVersion "1.0.3"
 #endif
 #ifndef Arch
   #define Arch "x64"

@@ -11,7 +11,7 @@
     <AssemblyName>TOScheduler</AssemblyName>
     <RootNamespace>TOScheduler</RootNamespace>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
     <Product>Technical Officials Scheduler</Product>
     <AssemblyTitle>Technical Officials Scheduler</AssemblyTitle>
     <Company>TriSport.me</Company>

@@ -451,3 +451,4 @@ body.has-bgv { background: transparent; }
 .bgv-shade { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: rgba(8,13,23,.72); }
 .has-bgv .section--alt { background: rgba(13,20,34,.55); }
 .has-bgv .footer { background: rgba(6,10,18,.88); }
+.prose h2 small { font-size: .62em; font-weight: 600; color: var(--muted); letter-spacing: 0; }
