@@ -2393,6 +2393,6 @@ WTP.ref = {
 };
 WTP.ref.APP_NAME = 'Technical Officials Scheduler';
 WTP.ref.APP_SHORT = 'TO Scheduler';
-WTP.ref.APP_VERSION = '1.0.3';
+WTP.ref.APP_VERSION = '1.0.4';
 WTP.ref.FILE_SUFFIX = '.wtplan.json';
 if (typeof module !== 'undefined') module.exports = WTP;

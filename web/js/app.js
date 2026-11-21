@@ -1185,6 +1185,8 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       card('Sources', h('pre', { class: 'refs', text: ref.REFERENCES }))));
   };
   var WHATS_NEW = [
+    ['1.0.4', 'November 2026', [
+      'The Course, Paces and Daylight and tides panels on the Races page now stay open while you type in them; they open and close only with their triangle.']],
     ['1.0.3', 'November 2026', [
       'Sunrise and sunset for every race – calculated from the venue’s coordinates and time zone (works offline), or typed in by hand.',
       'Races stay in daylight: a start before sunrise, or a last finisher after sunset, moves the start automatically – every duty, meeting and the athletes’ guide follow. The margins (15 min by default) can be changed per race.',

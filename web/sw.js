@@ -1,5 +1,5 @@
 /* Offline cache for the web version. Bump VERSION when files change. */
-var VERSION = 'tos-1.0.3-2';
+var VERSION = 'tos-1.0.4';
 var FILES = ['./', 'index.html', 'css/app.css', 'js/reference.js', 'js/engine.js', 'js/exporters.js', 'js/athletes.js', 'js/examples.js',
   'js/storage.js', 'js/app.js', 'js/boot.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'css/splash.css', 'js/splash.js', 'splash/splash.mp4', 'splash/poster.jpg'];

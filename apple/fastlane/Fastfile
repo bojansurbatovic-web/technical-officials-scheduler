@@ -141,7 +141,7 @@ def upload_listing(p)
       loc0.update(attributes: { description: md.call("description"), keywords: md.call("keywords"),
                                 promotional_text: md.call("promotional_text"), support_url: md.call("support_url"),
                                 marketing_url: md.call("marketing_url") }.compact)
-      notes = md.call("release_notes")
+      notes = (mac && md.call("release_notes-mac")) || md.call("release_notes")
       if notes && version.version_string != "1.0.0"
         begin
           loc0.update(attributes: { whats_new: notes })

@@ -1,5 +1,1 @@
-• Sunrise and sunset for every race – calculated from the venue’s coordinates and time zone, or typed in by hand.
-• Races stay in daylight: a start before sunrise, or a last finisher after sunset, moves the start automatically and the whole plan follows.
-• Tides on race day: high and low water with heights, the tide at the start and water notes – also in the athletes’ guide and the Excel export.
-• TO certification level (1, 2, 3a, 3b, 3c) for every official.
-• New What’s new page under More.
+• The Course, Paces and Daylight and tides panels on the Races page now stay open while you type in them; they open and close only with their triangle.
