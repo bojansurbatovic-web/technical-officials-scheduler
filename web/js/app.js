@@ -531,6 +531,17 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     if (!A.ev.races.length) wrap.appendChild(empty('No races yet – add one.'));
     root.appendChild(wrap);
   };
+  // Collapsible panel that stays open or closed across re-renders: every edit redraws the page,
+  // so the open state lives in A.panels (key → true/false) and changes only when the person clicks the summary.
+  function panel(key, summary, defaultOpen) {
+    A.panels = A.panels || {};
+    var open = key in A.panels ? A.panels[key] : !!defaultOpen;
+    var d = h('details', { class: 'adv', 'data-panel': key, open: open ? true : null }, h('summary', { text: summary }));
+    d.addEventListener('toggle', function () { A.panels[key] = d.open; });
+    for (var i = 3; i < arguments.length; i++) if (arguments[i]) d.appendChild(arguments[i]);
+    return d;
+  }
+  A.panel = panel;
   function raceCard(r) {
     var tl = A.res.timelines[r.id], sg = tl._segments, k = 'r-' + r.id + '-';
     function set(path, plan) {
@@ -567,7 +578,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
       field('Aid stations', numIn(k + 'as', r.aid_stations, function (v) { set('aid_stations')(Math.max(0, Math.round(v))); }, { min: 0, step: 1 })),
       h('div', { class: 'field span2' }, h('span', { class: 'flabel', text: 'Drafting' }), check(k + 'dl', r.draft_legal, set('draft_legal'), 'Draft-legal')));
     var P = r.paces, S = r.schedule;
-    var adv = h('details', { class: 'adv' }, h('summary', { text: 'Paces, field spread and race-day times' }),
+    var adv = panel(k + 'p-adv', 'Paces, field spread and race-day times', false,
       h('div', { class: 'form-grid g4' },
         field('Swim pace (min/100 m)', numIn(k + 'sp', P.swim_pace, set('paces.swim_pace'), { step: 0.01 })),
         field('Bike speed (km/h)', numIn(k + 'bs', P.bike_speed, set('paces.bike_speed'), { step: 0.1 })),
@@ -583,7 +594,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     var summary = h('div', { class: 'race-sum' },
       ['Swim ' + E.fmtDur(sg.swim), 'T1 ' + E.fmtDur(sg.t1), 'Bike ' + E.fmtDur(sg.bike), 'T2 ' + E.fmtDur(sg.t2), 'Run ' + E.fmtDur(sg.run)].map(function (t) { return h('span', { text: t }); }),
       h('span', { class: 'strong', text: 'Winner ≈ ' + hm(tl.winner) }), h('span', { text: 'Last finisher ≈ ' + hm(tl.last_finisher) }));
-    var c = card(null, h('div', { class: 'stack' }, main, summary, daylightBox(r, dl, k, set), h('details', { class: 'adv' }, h('summary', { text: 'Course, laps and stations' }), course), adv), null, 'race-card');
+    var c = card(null, h('div', { class: 'stack' }, main, summary, daylightBox(r, dl, k, set), panel(k + 'p-course', 'Course, laps and stations', false, course), adv), null, 'race-card');
     c.style.setProperty('--race', X.raceColour(A.ev, r.id));
     c.insertBefore(h('div', { class: 'card-head' }, h('h3', null, h('i', { class: 'swatch', style: 'background:' + X.raceColour(A.ev, r.id) }), r.name),
       h('div', { class: 'row-btns' },
@@ -624,8 +635,7 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
         btn('', function () { edit(function () { r.tides.splice(i, 1); }, { noPlan: true }); }, 'icon danger-text', 'trash', 'Remove'));
     }));
     var tat = E.tideAtStart(r);
-    return h('details', { class: 'adv', open: d.moved || !d.ok ? true : null },
-      h('summary', { text: 'Daylight and tides' + (d.moved ? ' · start moved to ' + E.fmtHHMM(d.start) : !d.ok ? ' · too long for the daylight' : '') }),
+    return panel(k + 'p-sun', 'Daylight and tides' + (d.moved ? ' · start moved to ' + E.fmtHHMM(d.start) : !d.ok ? ' · too long for the daylight' : ''), !!(d.moved || !d.ok),
       h('div', { class: 'stack' },
         h('div', { class: 'form-grid g4' },
           field('Sunrise', input(k + 'sunr', r.sunrise, setSun('sunrise'), { type: 'time' }), r.sun_auto !== false && hasVenue ? 'from the venue' : null),
