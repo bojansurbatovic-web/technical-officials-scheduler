@@ -262,6 +262,9 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     var main = document.getElementById('main');
     var active = document.activeElement, focusKey = active && active.getAttribute && active.getAttribute('data-k');
     var scroll = resetScroll ? 0 : main.scrollTop;
+    // keep open / closed panels as they are on screen (the toggle event can arrive after this redraw starts)
+    A.panels = A.panels || {};
+    Array.prototype.forEach.call(main.querySelectorAll('details[data-panel]'), function (d) { A.panels[d.getAttribute('data-panel')] = d.open; });
     renderChrome();
     var body = h('div', { class: 'section sec-' + A.section });
     if (A.section !== 'library' && A.section !== 'about' && A.section !== 'references' && !A.ev) {
