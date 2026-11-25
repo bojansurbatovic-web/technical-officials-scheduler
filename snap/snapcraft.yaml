@@ -45,6 +45,7 @@ apps:
     plugs:
       - home
       - removable-media
+      - network           # once-a-day check for a newer version (www.trisport.me/versions.json)
 
 parts:
   scheduler:

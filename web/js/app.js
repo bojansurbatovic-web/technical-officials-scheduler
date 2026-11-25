@@ -1215,6 +1215,39 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     root.appendChild(note('More on www.trisport.me/scheduler/whats-new.html', 'small'));
   };
   // once after an update: a short "What's new" (not on the first start, not in automated tests)
+  // Native apps: once a day ask the shell for the newest store version and show a banner when this one is older.
+  // (The web version needs no check – it updates itself.)
+  function newer(a, b) {
+    var x = String(a).split('.'), y = String(b).split('.');
+    for (var i = 0; i < Math.max(x.length, y.length, 3); i++) {
+      var p = parseInt(x[i], 10) || 0, q = parseInt(y[i], 10) || 0;
+      if (p !== q) return p > q;
+    }
+    return false;
+  }
+  A.newerVersion = newer;
+  function updateBar(u) {
+    var old = document.getElementById('update-bar'); if (old) old.remove();
+    var bar = h('div', { id: 'update-bar', class: 'update-bar', role: 'status' },
+      h('span', { text: 'Version ' + u.version + ' is available.' }),
+      btn('Update', function () { Store.openLink(u.url); }, 'primary'),
+      btn('Not now', function () { Store.setPref('updateSkip', u.version); bar.remove(); }));
+    var app = document.getElementById('app');
+    app.parentNode.insertBefore(bar, app);
+  }
+  A.checkForUpdate = function (manual) {
+    if (!Store.native) return Promise.resolve(null);
+    var now = Date.now();
+    if (!manual && now - (parseInt(Store.getPref('updateLast', '0'), 10) || 0) < 864e5) return Promise.resolve(null);
+    return Store.updateCheck().then(function (u) {
+      if (u && u.version) Store.setPref('updateLast', String(now));
+      if (!u || !u.version || !newer(u.version, ref.APP_VERSION)) { if (manual) toast(u ? 'You have the newest version (' + ref.APP_VERSION + ').' : 'Could not check for updates.'); return null; }
+      if (!manual && Store.getPref('updateSkip', '') === u.version) return null;
+      updateBar(u);
+      return u;
+    });
+  };
+
   function whatsNewOnce() {
     try {
       if (navigator.webdriver) return;
@@ -1232,7 +1265,8 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
   SECTIONS.trisport = function (root) {
     function link(label, url, cls) { return btn(label, function () { Store.openLink(url); }, cls); }
     root.appendChild(header('TriSport.me', 'The home of Technical Officials Scheduler and its sister apps for triathlon officials, event organisers and athletes.',
-      [link('Open www.trisport.me', 'https://www.trisport.me/', 'primary')]));
+      [link('Open www.trisport.me', 'https://www.trisport.me/', 'primary')].concat(Store.native ?
+        [btn('Check for updates', function () { A.checkForUpdate(true).catch(function () { toast('Could not check for updates.'); }); })] : [])));
     root.appendChild(h('div', { class: 'grid-2' },
       card('What you find there', h('ul', { class: 'bullets' },
         h('li', { text: 'News and help for this app, and the web version that runs in any browser.' }),
@@ -1320,6 +1354,9 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     }).catch(function (e) {
       console.error(e);
       openEvent(JSON.parse(JSON.stringify(W.examples.example_q3)), null, 'library');
-    }).then(function () { Store.ready(); });
+    }).then(function () {
+      Store.ready();
+      if (!navigator.webdriver) setTimeout(function () { A.checkForUpdate(false).catch(function () { /* offline */ }); }, 2500);
+    });
   };
 })(WTP);

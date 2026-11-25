@@ -46,7 +46,7 @@ Independent tool – not affiliated with, endorsed by or sponsored by World Tria
 First release.
 
 ## Notes for the App Review team
-No sign-in is needed. The app opens with an example event (two Elite races, 18 placeholder officials named TO 01–TO 18). Plan → Assignments shows the generated plan; Setup lets you change races and officials; More → Export & share creates Excel, calendar and picture files. The app works fully offline and makes no network requests.
+No sign-in is needed. The app opens with an example event (two Elite races, 18 placeholder officials named TO 01–TO 18). Plan → Assignments shows the generated plan; Setup lets you change races and officials; More → Export & share creates Excel, calendar and picture files. The app works fully offline and makes no network requests apart from a once-a-day check for a newer version.
 
 ## Screenshots
 In `app-store/screenshots/`:

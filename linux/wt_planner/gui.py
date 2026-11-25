@@ -17,6 +17,7 @@ from . import athletes as ATH  # noqa: E402
 from . import engine as E  # noqa: E402
 from . import exporters as X  # noqa: E402
 from . import reference as ref  # noqa: E402
+from . import update_check  # noqa: E402
 
 DATA_DIR = os.path.join(GLib.get_user_data_dir(), "wt-planner")
 LIB_DIR = os.path.join(DATA_DIR, "events")
@@ -307,7 +308,13 @@ class MainWindow(Gtk.ApplicationWindow):
         paned.pack2(self.nb, True, True)
         paned.set_position(290)
         self.paned = paned
-        self.add(paned)
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        # once a day, in the background: is there a newer version? (www.trisport.me/versions.json)
+        self.update_bar = update_check.gtk_infobar(update_check.start(
+            "scheduler", ref.APP_VERSION, CONF_DIR) if not os.environ.get("WTP_NO_UPDATECHECK") else _NoCheck())
+        vbox.pack_start(self.update_bar, False, False, 0)
+        vbox.pack_start(paned, True, True, 0)
+        self.add(vbox)
 
         self._tab_event()
         self._tab_officials()
@@ -379,6 +386,7 @@ class MainWindow(Gtk.ApplicationWindow):
             "auto": (lambda *a: self.on_auto(keep=True), ["F5"]),
             "auto_fresh": (lambda *a: self.on_auto(keep=False), []),
             "swap": (self.on_swap, []), "about": (self.on_about, []),
+            "check_updates": (self.on_check_updates, []),
             "example_q3": (lambda *a: self.open_example("example_q3.wtplan.json"), []),
             "example_multi": (lambda *a: self.open_example("example_multiday.wtplan.json"), []),
             "sidebar": (lambda *a: self.side_btn.set_active(not self.side_btn.get_active()), ["F9"]),
@@ -448,6 +456,7 @@ class MainWindow(Gtk.ApplicationWindow):
         sec5.append("Example: two-day weekend, 3 races", "win.example_multi")
         sec5.append("What's new", "win.whatsnew")
         sec5.append("TriSport.me – website, help and other apps", "win.trisport")
+        sec5.append("Check for updates", "win.check_updates")
         sec5.append("References & about", "win.about")
         menu.append_section(None, sec5)
         mb = Gtk.MenuButton()
@@ -2491,6 +2500,15 @@ class MainWindow(Gtk.ApplicationWindow):
             GLib.timeout_add(600, lambda: (self.on_whats_new(only_latest=True), False)[1])
         return False
 
+    def on_check_updates(self, *a):
+        def finished(c):
+            msg = (update_check.MSG_FAILED if c.failed else update_check.MSG_NEWEST.format(v=ref.APP_VERSION))
+            d = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO,
+                                  buttons=Gtk.ButtonsType.OK, text=update_check.MENU_CHECK, secondary_text=msg)
+            d.run(); d.destroy()
+        self.update_bar.on_finished = finished
+        self.update_bar.watch(update_check.start("scheduler", ref.APP_VERSION, CONF_DIR, force=True))
+
     def on_about(self, *a):
         d = Gtk.AboutDialog(transient_for=self, modal=True)
         d.set_program_name(ref.APP_NAME)
@@ -2527,6 +2545,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
 
 # ======================================================================= application
+class _NoCheck:  # WTP_NO_UPDATECHECK=1 (tests): no network
+    done, failed = True, False
+
+    def result(self):
+        return None
+
+
 class PlannerApp(Gtk.Application):
     def __init__(self):
         flags = Gio.ApplicationFlags.HANDLES_OPEN

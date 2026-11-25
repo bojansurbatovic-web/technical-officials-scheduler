@@ -82,6 +82,11 @@ var WTP = (typeof WTP !== 'undefined') ? WTP : {};
     try { document.execCommand('copy'); } finally { ta.remove(); }
     return Promise.resolve();
   };
+  /** Native apps only: {version, url} of the newest version in the store, or null. */
+  S.updateCheck = function () {
+    if (!bridge) return Promise.resolve(null);
+    return call('updateCheck', {}).catch(function () { return null; });
+  };
   S.openLink = function (url) {
     if (bridge) return call('openURL', { url: url });
     window.open(url, '_blank', 'noopener');

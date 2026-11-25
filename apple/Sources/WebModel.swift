@@ -141,6 +141,14 @@ final class WebModel: NSObject, ObservableObject, WKScriptMessageHandlerWithRepl
             case "openURL":
                 if let s = body["url"] as? String, let url = URL(string: s), url.scheme == "https" { openExternally(url) }
                 ok(true)
+            case "updateCheck":   // newer version on the App Store? (the page keeps the once-a-day and "Not now" logic)
+                Task { @MainActor in
+                    if let u = await UpdateChecker.check(appKey: "scheduler", force: true) {
+                        ok(["version": u.version, "url": u.url.absoluteString])
+                    } else {
+                        ok(NSNull())
+                    }
+                }
             default:
                 replyHandler(nil, "Unknown action \(action)")
             }

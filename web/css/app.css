@@ -284,3 +284,12 @@ dialog.dlg h2 { margin: 0; padding: 16px 18px 6px; font-size: 19px; }
 .ath-row .ath-time { width: 108px; }
 @media (max-width: 420px) { .tabbar .tab span { font-size: 10px; } }
 @media (max-width: 600px) { .ath-row .ath-time { width: 84px; font-size: 12.5px; } }
+
+/* "Update available" bar (native apps) */
+.update-bar { position: fixed; z-index: 50; left: 50%; transform: translateX(-50%); top: calc(var(--top, 0px) + 64px);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: calc(100% - 24px);
+  background: var(--accent); color: var(--accent-ink); padding: 8px 10px 8px 14px; border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .25); font-weight: 600; font-size: 14px; }
+.update-bar span { flex: 1 1 auto; }
+.update-bar button { background: rgba(255, 255, 255, .18); color: inherit; border: 0; }
+.update-bar button.primary { background: #fff; color: var(--accent); }

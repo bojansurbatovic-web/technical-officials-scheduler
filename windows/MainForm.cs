@@ -130,7 +130,9 @@ sealed class MainForm : Form
         switch (Str(msg, "action"))
         {
             case "hello":
-                return new JsonObject { ["platform"] = "windows" };
+                return new JsonObject { ["platform"] = "windows", ["store"] = FromStore };
+            case "updateCheck":
+                return await LatestVersion();
             case "ready":
                 pageReady = true;
                 contentCrashes = 0;
@@ -161,7 +163,8 @@ sealed class MainForm : Form
                 return true;
             case "openURL":
                 var url = Str(msg, "url");
-                if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) OpenExternally(url);
+                if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                    url.StartsWith("ms-windows-store://pdp/", StringComparison.OrdinalIgnoreCase)) OpenExternally(url);
                 return true;
             default:
                 throw new InvalidOperationException("Unknown action " + Str(msg, "action"));
@@ -235,6 +238,25 @@ sealed class MainForm : Form
         uri.StartsWith("about:", StringComparison.OrdinalIgnoreCase) ||
         uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
         uri.StartsWith("blob:", StringComparison.OrdinalIgnoreCase);
+
+    // ---- update check: is there a newer version? (www.trisport.me/versions.json; the page shows the banner)
+    static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
+    /// Microsoft Store (MSIX) installs run from C:\Program Files\WindowsApps\…
+    static bool FromStore => AppContext.BaseDirectory.Contains(@"\WindowsApps\", StringComparison.OrdinalIgnoreCase);
+
+    static async Task<JsonNode?> LatestVersion()
+    {
+        try
+        {
+            var text = await Http.GetStringAsync("https://www.trisport.me/versions.json");
+            var w = JsonNode.Parse(text)?["apps"]?["scheduler"]?["windows"];
+            var version = w?["version"]?.GetValue<string>();
+            if (string.IsNullOrEmpty(version)) return null;
+            var url = (FromStore ? w?["store"] : null) ?? w?["url"];
+            return new JsonObject { ["version"] = version, ["url"] = url?.GetValue<string>() ?? "https://www.trisport.me/scheduler/" };
+        }
+        catch { return null; }  // offline: say nothing
+    }
 
     static bool IsExternal(string uri) =>
         uri.StartsWith("https://", StringComparison.OrdinalIgnoreCase) || uri.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase);
