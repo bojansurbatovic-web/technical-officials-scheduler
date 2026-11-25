@@ -6,32 +6,81 @@
     "trianatomy": {
       "name": "TriAnatomy",
       "page": "https://www.trisport.me/trianatomy/",
-      "ios": { "version": "1.4", "url": "https://apps.apple.com/app/id6829890027" },
-      "android": { "version": "1.4", "code": 13006, "url": "https://www.trisport.me/downloads/TriAnatomy-1.4.apk" }
+      "ios": {
+        "version": "1.4",
+        "url": "https://apps.apple.com/app/id6829890027"
+      },
+      "android": {
+        "version": "1.4",
+        "code": 13006,
+        "url": "https://www.trisport.me/downloads/TriAnatomy-1.4.apk"
+      }
     },
     "triofficial": {
       "name": "TriOfficial",
       "page": "https://www.trisport.me/triofficial/",
-      "ios": { "version": "1.0", "url": "https://apps.apple.com/app/id6823983576" },
-      "android": { "version": "1.1.3", "url": "https://www.trisport.me/downloads/TriOfficial-1.1.3.apk" },
-      "windows": { "version": "1.1.2", "url": "https://apps.microsoft.com/detail/9P8RXRGJ9SJW", "store": "ms-windows-store://pdp/?ProductId=9P8RXRGJ9SJW" },
-      "ubuntu": { "version": "1.1.2", "url": "https://snapcraft.io/triofficial-race-officials", "snap": "triofficial-race-officials" }
+      "ios": {
+        "version": "1.0",
+        "url": "https://apps.apple.com/app/id6823983576"
+      },
+      "android": {
+        "version": "1.1.3",
+        "url": "https://www.trisport.me/downloads/TriOfficial-1.1.3.apk"
+      },
+      "windows": {
+        "version": "1.1.2",
+        "url": "https://apps.microsoft.com/detail/9P8RXRGJ9SJW",
+        "store": "ms-windows-store://pdp/?ProductId=9P8RXRGJ9SJW"
+      },
+      "ubuntu": {
+        "version": "1.1.2",
+        "url": "https://snapcraft.io/triofficial-race-officials",
+        "snap": "triofficial-race-officials"
+      }
     },
     "tricarbon": {
       "name": "TriCarbon",
       "page": "https://www.trisport.me/tricarbon/",
-      "ios": { "version": "1.3.1", "url": "https://apps.apple.com/app/id6826201612" },
-      "windows": { "version": "1.3.1", "url": "https://apps.microsoft.com/detail/9NZN56VGJ9QP", "store": "ms-windows-store://pdp/?ProductId=9NZN56VGJ9QP" },
-      "ubuntu": { "version": "1.3.1", "url": "https://snapcraft.io/tricarbon", "snap": "tricarbon" }
+      "ios": {
+        "version": "1.3.1",
+        "url": "https://apps.apple.com/app/id6826201612"
+      },
+      "windows": {
+        "version": "1.3.2",
+        "url": "https://apps.microsoft.com/detail/9NZN56VGJ9QP",
+        "store": "ms-windows-store://pdp/?ProductId=9NZN56VGJ9QP"
+      },
+      "ubuntu": {
+        "version": "1.3.2",
+        "url": "https://snapcraft.io/tricarbon",
+        "snap": "tricarbon"
+      }
     },
     "scheduler": {
       "name": "Technical Officials Scheduler",
       "page": "https://www.trisport.me/scheduler/",
-      "ios": { "version": "1.0.4", "url": "https://apps.apple.com/app/id6833498873" },
-      "mac": { "version": "1.0.4", "url": "https://apps.apple.com/app/id6833498873" },
-      "windows": { "version": "1.0.4", "url": "https://github.com/bojansurbatovic-web/technical-officials-scheduler/releases/latest", "store": "ms-windows-store://pdp/?ProductId=9NGDB0JJ5TZM" },
-      "ubuntu": { "version": "1.5.0", "url": "https://snapcraft.io/technical-officials-scheduler", "snap": "technical-officials-scheduler" },
-      "web": { "version": "1.0.4", "url": "https://www.trisport.me/app/" }
+      "ios": {
+        "version": "1.0.4",
+        "url": "https://apps.apple.com/app/id6833498873"
+      },
+      "mac": {
+        "version": "1.0.4",
+        "url": "https://apps.apple.com/app/id6833498873"
+      },
+      "windows": {
+        "version": "1.0.4",
+        "url": "https://github.com/bojansurbatovic-web/technical-officials-scheduler/releases/latest",
+        "store": "ms-windows-store://pdp/?ProductId=9NGDB0JJ5TZM"
+      },
+      "ubuntu": {
+        "version": "1.5.0",
+        "url": "https://snapcraft.io/technical-officials-scheduler",
+        "snap": "technical-officials-scheduler"
+      },
+      "web": {
+        "version": "1.0.4",
+        "url": "https://www.trisport.me/app/"
+      }
     }
   }
 }
