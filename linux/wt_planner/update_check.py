@@ -9,7 +9,7 @@ it is one plain download of a public file. Usage (Tkinter):
 `info` has: version, message (English template, see TEXTS), url (what Update opens), command (snap refresh line or None).
 Call tk_banner(root, checker, tr=...) to show it as a bar at the top of the window.
 """
-import json, os, sys, threading, time, urllib.request
+import json, os, re, sys, threading, time, urllib.request
 
 MANIFEST = "https://www.trisport.me/versions.json"
 DAY = 24 * 3600
@@ -25,6 +25,24 @@ MSG_NEWEST = "You have the newest version ({v})."
 MSG_FAILED = "Could not check for updates. Please check your internet connection."
 TEXTS = [MSG_GENERIC, MSG_STORE, MSG_INSTALLER, MSG_SNAP, BTN_UPDATE, BTN_LATER, BTN_COPY, MENU_CHECK, MSG_NEWEST,
          MSG_FAILED]
+
+
+# Update only ever opens links to these places, whatever versions.json says (protects against a tampered file).
+TRUSTED_LINKS = ("https://www.trisport.me/", "https://trisport.me/", "https://apps.microsoft.com/",
+                 "ms-windows-store://pdp/", "https://snapcraft.io/", "https://apps.apple.com/",
+                 "https://github.com/bojansurbatovic-web/")
+
+
+def trusted(url):
+    """The link if it starts with one of TRUSTED_LINKS (and has no spaces or quotes), else None."""
+    if not isinstance(url, str) or any(c in url for c in " \t\r\n\"'<>`"):
+        return None
+    return url if url.startswith(TRUSTED_LINKS) else None
+
+
+def safe_snap(name):
+    """A snap name (lower-case letters, digits and dashes) or None."""
+    return name if isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", name) else None
 
 
 def parse(v):
@@ -101,13 +119,13 @@ class _Check:
         # "message" is an English template with {v} / {cmd}; tk_banner translates it with tr() and fills it in.
         v = latest["version"]
         p = platform()
-        info = {"version": v, "url": latest.get("url"), "command": None, "message": MSG_GENERIC}
+        info = {"version": v, "url": trusted(latest.get("url")), "command": None, "message": MSG_GENERIC}
         if p == "windows":
-            if from_microsoft_store() and latest.get("store"):
-                info.update(url=latest["store"], message=MSG_STORE)
+            if from_microsoft_store() and trusted(latest.get("store")):
+                info.update(url=trusted(latest["store"]), message=MSG_STORE)
             else:
                 info["message"] = MSG_INSTALLER
-        elif p == "ubuntu" and os.environ.get("SNAP") and latest.get("snap"):
+        elif p == "ubuntu" and os.environ.get("SNAP") and safe_snap(latest.get("snap")):
             info.update(command=f"sudo snap refresh {latest['snap']}", message=MSG_SNAP)
         return info
 
@@ -126,6 +144,9 @@ def start(app_id, current, state_dir=None, force=False):
 
 def open_url(url):
     import webbrowser
+    url = trusted(url)
+    if not url:
+        return
     try:
         if sys.platform.startswith("win"):
             os.startfile(url)  # also opens ms-windows-store:// links
