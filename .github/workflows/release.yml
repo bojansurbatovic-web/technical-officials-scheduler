@@ -56,7 +56,7 @@ jobs:
           echo "DIST_CERT_PATH=$RUNNER_TEMP/dist.p12" >> "$GITHUB_ENV"
       - name: Build, sign and upload
         run: cd apple && fastlane ios beta
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: ios-build-logs
@@ -99,7 +99,7 @@ jobs:
           fi
       - name: Build, sign and upload
         run: cd apple && fastlane mac beta
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: mac-build-logs

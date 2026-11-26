@@ -61,7 +61,7 @@ jobs:
           echo "----- app output -----"; cat out/app-output.txt
           echo "----- denials -----"; grep -i "deny" out/system-log.txt | head -40 || true
           grep -q "TOS-SELFCHECK READY" out/app-output.txt && echo "RESULT: page started" || echo "RESULT: page did NOT start"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mac-launch-${{ matrix.variant }}
