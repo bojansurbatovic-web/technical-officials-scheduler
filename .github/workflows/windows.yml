@@ -58,7 +58,7 @@ jobs:
       - name: Make the Microsoft Store package (MSIX)
         shell: pwsh
         run: pwsh windows/store/make-msix.ps1 -Arch ${{ matrix.arch }} -Version $env:APP_VERSION -PublishDir windows/publish/${{ matrix.arch }} -OutDir windows/dist-store
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: store-${{ matrix.arch }}
           path: windows/dist-store/*.msix
@@ -73,7 +73,7 @@ jobs:
           & $iscc /Q /DAppVersion=$env:APP_VERSION /DArch=${{ matrix.arch }} windows/installer/TOScheduler.iss
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-ChildItem windows/dist | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: installer-${{ matrix.arch }}
           path: windows/dist/*.exe
@@ -116,7 +116,7 @@ jobs:
           $u = "$env:LOCALAPPDATA\Programs\Technical Officials Scheduler\unins000.exe"
           Start-Process $u -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES' -Wait
           "Uninstalled: " + (-not (Test-Path $exe))
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: windows-launch-check
@@ -142,7 +142,7 @@ jobs:
           if ($LASTEXITCODE) { exit 1 }
           Get-ChildItem store | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
           Get-Content windows/store/identity.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: store-package
           path: store/*.msixbundle

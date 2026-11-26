@@ -22,7 +22,7 @@ jobs:
           SHOTS=shots npm run test:ui
         env:
           PW_CHANNEL: chrome      # the runner's preinstalled Google Chrome (no apt downloads)
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: screenshots
@@ -55,7 +55,7 @@ jobs:
           set -o pipefail
           xcodebuild -project TOScheduler.xcodeproj -scheme TOScheduler-macOS -configuration Debug \
             -destination 'generic/platform=macOS' build CODE_SIGNING_ALLOWED=NO 2>&1 | tee ../build-mac.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: xcode-build-logs
