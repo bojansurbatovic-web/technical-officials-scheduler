@@ -1,0 +1,10 @@
+# Weekly check for outdated or vulnerable libraries; opens a pull request for each update (nothing merges by itself).
+# npm covers only the test tools (Playwright); the apps themselves use no outside libraries.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
