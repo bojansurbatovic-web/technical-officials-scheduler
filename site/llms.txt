@@ -1,0 +1,17 @@
+# TriSport.me
+
+> Free, independent apps for triathlon technical officials, event organisers and triathletes, made by Bojan Šurbatović, a triathlon technical official, triathlete and engineer from Montenegro. No accounts, no ads, no data collection. Not affiliated with World Triathlon.
+
+## Apps
+
+- [TriCarbon](https://trisport.me/tricarbon/): Estimates the carbon footprint of a triathlon or multisport event (per competitor, spectator, staff, volunteer and in total) for event organisers. iPhone, Windows (Microsoft Store), Ubuntu (Snap Store). App Store: https://apps.apple.com/app/id6826201612
+- [TriAnatomy](https://trisport.me/trianatomy/): Strength-training companion for triathletes: shows which muscles each exercise works and builds workouts and training plans for swim, bike and run. iPhone, iPad, Android (APK on this site). App Store: https://apps.apple.com/app/id6829890027
+- [TriOfficial](https://trisport.me/triofficial/): Reference and checklist app for triathlon technical officials and local organising committees: duties for each official role before, during and after a race, key race figures, equipment to pack. iPhone, Android (APK on this site), Windows, Ubuntu. App Store: https://apps.apple.com/app/id6823983576
+- [Technical Officials Scheduler](https://trisport.me/scheduler/): Plans the Technical Officials of a triathlon event: positions, short second jobs without time clashes, meetings, briefings, Gantt chart, daylight and tides, exports to Excel and calendar. Web (https://trisport.me/app/), iPhone, iPad, Mac, Windows, Ubuntu. App Store: https://apps.apple.com/app/id6833498873
+
+## More
+
+- [Technical Officials Scheduler web version](https://trisport.me/app/): runs in the browser, no install.
+- [Scheduler What's new](https://trisport.me/scheduler/whats-new.html): changes in each version.
+- [Support](https://trisport.me/scheduler/support.html)
+- [Privacy](https://trisport.me/scheduler/privacy.html): the apps collect no personal data.
