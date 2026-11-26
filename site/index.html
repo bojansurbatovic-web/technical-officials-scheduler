@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#080d17">
 <link rel="canonical" href="https://trisport.me/">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/css/site.css?v=2026111602">
+<link rel="stylesheet" href="assets/css/site.css?v=2026112601">
 <style id="bgv-critical">
 /* Kept inline so the video background is right even if a browser still has an older stylesheet cached */
 .bgv { position: fixed; inset: 0; z-index: -2; overflow: hidden; background: #080d17; }
@@ -133,6 +133,7 @@
       <a href="#preview">Preview</a>
       <a href="#officials">Officials</a>
       <a href="#independence">Independence</a>
+      <a href="#contact">Contact</a>
       <a class="btn btn--primary btn--sm" href="scheduler/">Open Scheduler <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
     </nav>
     <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-controls="nav" aria-expanded="false">
@@ -483,6 +484,49 @@
   </div>
 </section>
 
+
+<!-- ================= CONTACT ================= -->
+<section class="section" id="contact">
+  <div class="wrap">
+    <div class="contact">
+      <div>
+        <span class="eyebrow">Contact</span>
+        <h2>Questions, ideas or a bug to report?</h2>
+        <p>Send me a message here and it comes straight to my inbox. I read everything and reply as soon as I can, usually within a few days.</p>
+        <p>It helps to mention which app you are writing about and, for a problem, what device you use.</p>
+        <p class="contact-note">Your message is delivered by Web3Forms, a form service, and is used only to reply to you. Nothing is stored on this site.</p>
+      </div>
+      <form class="contact-form" id="contact-form" novalidate>
+        <input type="checkbox" name="botcheck" class="contact-trap" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="field">
+          <label for="cf-name">Your name</label>
+          <input class="input" id="cf-name" name="name" type="text" autocomplete="name" maxlength="100" required>
+        </div>
+        <div class="field">
+          <label for="cf-email">Your email</label>
+          <input class="input" id="cf-email" name="email" type="email" autocomplete="email" maxlength="200" required>
+        </div>
+        <div class="field">
+          <label for="cf-app">About</label>
+          <select id="cf-app" name="app">
+            <option>General question</option>
+            <option>TriCarbon</option>
+            <option>TriAnatomy</option>
+            <option>TriOfficial</option>
+            <option>Technical Officials Scheduler</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cf-message">Message</label>
+          <textarea class="input" id="cf-message" name="message" rows="6" maxlength="5000" required></textarea>
+        </div>
+        <button class="btn btn--primary" type="submit" id="cf-send">Send message <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <p class="contact-status" id="cf-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer class="footer">
@@ -512,6 +556,7 @@
           <li><a href="#preview">Previews</a></li>
           <li><a href="#officials">About officials</a></li>
           <li><a href="#independence">Independence notice</a></li>
+          <li><a href="#contact">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -524,6 +569,6 @@
 </footer>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="assets/js/site.js?v=2026111602"></script>
+<script src="assets/js/site.js?v=2026112601"></script>
 </body>
 </html>

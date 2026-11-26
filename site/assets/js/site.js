@@ -166,3 +166,54 @@ var APP_LINKS = {
   segBtns.forEach(function (b) { b.addEventListener("click", function () { showAnatomy(b.getAttribute("data-seg")); }); });
   showAnatomy("swim");
 })();
+
+/* ------------------------------------------------------------------
+   CONTACT FORM — sends through Web3Forms (https://web3forms.com).
+   The access key is public by design and does not reveal the email
+   address that receives the messages.
+------------------------------------------------------------------- */
+var CONTACT_ACCESS_KEY = "";
+(function () {
+  "use strict";
+  var form = document.getElementById("contact-form");
+  if (!form) return;
+  var status = document.getElementById("cf-status");
+  var send = document.getElementById("cf-send");
+  var openedAt = Date.now();
+  function say(msg, kind) { status.textContent = msg; status.className = "contact-status" + (kind ? " " + kind : ""); }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = form.elements.name, email = form.elements.email, message = form.elements.message;
+    var bad = null;
+    [name, email, message].forEach(function (f) { f.setAttribute("aria-invalid", f.checkValidity() && f.value.trim() ? "false" : "true"); if (!bad && f.getAttribute("aria-invalid") === "true") bad = f; });
+    if (bad) { say("Please fill in your name, a valid email address and a message.", "err"); bad.focus(); return; }
+    if (form.elements.botcheck.checked) { say("Thank you, your message has been sent.", "ok"); form.reset(); return; }   // bot filled the hidden box
+    if (Date.now() - openedAt < 3000) { say("Please take a moment before sending.", "err"); return; }
+    if (!CONTACT_ACCESS_KEY) { say("The contact form is not active yet.", "err"); return; }
+
+    var app = form.elements.app.value;
+    var payload = {
+      access_key: CONTACT_ACCESS_KEY,
+      subject: "trisport.me: " + app + " — message from " + name.value.trim(),
+      from_name: "trisport.me contact form",
+      name: name.value.trim(),
+      email: email.value.trim(),
+      about: app,
+      message: message.value.trim(),
+      botcheck: false
+    };
+    send.disabled = true; say("Sending…");
+    fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json().catch(function () { return { success: false }; }); })
+      .then(function (res) {
+        if (res && res.success) { say("Thank you, your message has been sent. I will reply to " + payload.email + ".", "ok"); form.reset(); }
+        else { say("Sorry, the message could not be sent. Please try again in a few minutes.", "err"); }
+      })
+      .catch(function () { say("Sorry, the message could not be sent. Please check your connection and try again.", "err"); })
+      .then(function () { send.disabled = false; });
+  });
+})();
