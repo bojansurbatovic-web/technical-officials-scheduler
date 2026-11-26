@@ -10,6 +10,6 @@
     "test:ui": "node tests/ui_smoke.js && node tests/native_bridge.js && node tests/windows_bridge.js && node tests/splash.js && node tests/daylight_ui.js && node tests/panels_ui.js"
   },
   "devDependencies": {
-    "playwright": "1.63.0"
+    "playwright": "1.65.1"
   }
 }
