@@ -31,7 +31,7 @@ jobs:
     if: github.event_name == 'push' || inputs.platform != 'mac'
     runs-on: macos-15-intel   # Intel Mac machines: the Apple-silicon ones were at capacity
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check that the Apple secrets are set
         run: |
           for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD; do
@@ -69,7 +69,7 @@ jobs:
       MAC_INSTALLER_P12_BASE64: ${{ secrets.MAC_INSTALLER_P12_BASE64 }}
       MAC_INSTALLER_PASSWORD: ${{ secrets.MAC_INSTALLER_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check that the Apple secrets are set
         run: |
           for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD; do

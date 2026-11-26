@@ -18,7 +18,7 @@ jobs:
       matrix:
         variant: [as-shipped, without-network-client]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Use the newest Xcode
         run: |
           X=$(ls -d /Applications/Xcode_2[6-9]*.app 2>/dev/null | sort -V | tail -1)
