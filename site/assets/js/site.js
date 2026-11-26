@@ -172,7 +172,7 @@ var APP_LINKS = {
    The access key is public by design and does not reveal the email
    address that receives the messages.
 ------------------------------------------------------------------- */
-var CONTACT_ACCESS_KEY = "";
+var CONTACT_ACCESS_KEY = "f91cfb0b-751b-4181-b5b7-963859a7450c";
 (function () {
   "use strict";
   var form = document.getElementById("contact-form");
