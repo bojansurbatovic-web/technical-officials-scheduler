@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-11-27",
+  "updated": "2026-11-28",
   "about": "Newest version of each trisport.me app per platform. The apps read this file to show an 'Update available' banner. Update the entry when a release is live in its store.",
   "apps": {
     "trianatomy": {
@@ -29,7 +29,7 @@
         "url": "https://www.trisport.me/downloads/TriOfficial-1.2.0.apk"
       },
       "windows": {
-        "version": "1.1.2",
+        "version": "1.2.0",
         "url": "https://apps.microsoft.com/detail/9P8RXRGJ9SJW",
         "store": "ms-windows-store://pdp/?ProductId=9P8RXRGJ9SJW"
       },
